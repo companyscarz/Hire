@@ -1,0 +1,13 @@
+{%extends 'mainError.html' %}
+
+  {%block head%}
+	<title>{{title}}</title>
+  {%endblock head%}
+
+{%block body%}
+    <div class="container">
+            {% block errortype %}415{% endblock errortype %}
+			{% block errormsg %}
+				Unsupported Media Type
+			{% endblock errormsg %}
+{%endblock body%}

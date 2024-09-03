@@ -1,0 +1,13 @@
+{%extends 'mainError.html' %}
+
+  {%block head%}
+	<title>{{title}}</title>
+  {%endblock head%}
+
+{%block body%}
+    <div class="container">
+            {% block errortype %}401{% endblock errortype %}
+			{% block errormsg %}
+				Unauthenticated
+			{% endblock errormsg %}
+{%endblock body%}

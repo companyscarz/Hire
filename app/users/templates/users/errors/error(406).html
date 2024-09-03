@@ -1,0 +1,13 @@
+{%extends 'mainError.html' %}
+
+  {%block head%}
+	<title>{{title}}</title>
+  {%endblock head%}
+
+{%block body%}
+    <div class="container">
+            {% block errortype %}406{% endblock errortype %}
+			{% block errormsg %}
+				Not Acceptable
+			{% endblock errormsg %}
+{%endblock body%}
