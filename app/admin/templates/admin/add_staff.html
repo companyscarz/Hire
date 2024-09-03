@@ -1,0 +1,131 @@
+{% extends "layout.html"%}
+
+{% block body %}
+	<nav class="container navbar">
+     <ul class="nav nav-pills">
+	      <li class="nav-item">
+	      	<a class="nav-link active typing-animation" aria-current="page" href="{{url_for('add_staff_bp.Add_staff')}}">Add_staff</a>
+	      </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('staff_bp.Staff')}}">staff</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('admin_opportunities_bp.Admin_opportunities')}}">Opportunities</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('admin_applicantions_bp.Admin_applicantions')}}">Applicantions</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('admin_advertisements_bp.Admin_advertisements')}}">Advertisements</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('blocked_bp.Blocked')}}">Blocked</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('logout_bp.logout')}}">log out</a>
+          </li>
+    </ul>
+	</nav>
+
+	<div class='flashed'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+	</div>
+
+	<form class="row g-3" enctype="multipart/form-data" method=post>
+	    {{form.hidden_tag()}}
+		<div class="col-md-12">
+			
+		 <div class="mb-3">
+		 {{form.name.label(class="form-label")}}
+		 {{form.name(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.name.errors %}
+		    {% for error in form.name.errors %}
+		        <p class="fw-lighter flash_info">{{error}}</p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		 <div class="mb-3">
+		 {{form.email.label(class="form-label")}}
+		 {{form.email(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.email.errors %}
+		    {% for error in form.email.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+
+        <div class="mb-3">
+		 {{form.telphone.label(class="form-label")}}
+		 {{form.telphone(class="form-control", id="telephone_number")}}
+
+		 {% if form.telphone.errors %}
+		    {% for error in form.telphone.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+            
+		 <div class="mb-3">
+		 {{form.photo.label(class="form-label")}}
+		 {{form.photo(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.photo.errors %}
+		    {% for error in form.photo.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		 <div class="mb-3">
+		 {{form.password.label(class="form-label")}}
+             <br>
+            <small>Suggested password:{{password}}</small>
+		 {{form.password(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.password.errors %}
+		    {% for error in form.password.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		<div class="mb-3">
+		 {{form.gender.label(class="form-label")}}
+		 {{form.gender(class="form-control", id="exampleFormControlInput1", class="dropdown-toggle")}}
+
+		 {% if form.gender.errors %}
+		    {% for error in form.gender.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+            
+		 <div class="mb-3">
+		 {{form.passcode.label(class="form-label")}}
+		 {{form.passcode(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.passcode.errors %}
+		    {% for error in form.passcode.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+			
+		 
+		<div>
+		  {{form.submit(class="btn btn_success")}}
+		</div>
+	 </form>
+
+{% endblock body%}

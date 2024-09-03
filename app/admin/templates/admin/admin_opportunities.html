@@ -1,0 +1,219 @@
+{% extends "layout.html"%}
+
+{% block body %}
+<nav class="container navbar">
+     <ul class="nav nav-pills">
+	      <li class="nav-item">
+	      	<a class="nav-link" href="{{url_for('add_staff_bp.Add_staff')}}">Add_staff</a>
+	      </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('staff_bp.Staff')}}">staff</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('suggestions_bp.Suggestions')}}">Suggestions</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link active typing-animation" aria-current="page" href="{{url_for('admin_opportunities_bp.Admin_opportunities')}}">Opportunities</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('admin_applicantions_bp.Admin_applicantions')}}">Applicantions</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('admin_advertisements_bp.Admin_advertisements')}}">Advertisements</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('blocked_bp.Blocked')}}">Blocked</a>
+          </li>
+			<li>
+  				<div class="container-fluid">
+    				<form class="d-flex" method="POST" action="{{url_for('company_search_bp.Company_search')}}">
+      					<input name="search_company" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      						<button class="btn btn_info" type="submit">Search</button>
+    				</form>
+  				</div>
+			</li>
+          <li class="nav-item">
+              <a class="nav-link" href="{{url_for('logout_bp.logout')}}">log out</a>
+          </li>
+    </ul>
+</nav>
+
+<div class='flashed'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+</div>
+
+<div class="col-md-12"> <!-- Use col-md-12 to make the table span the entire row -->
+    <div style="overflow-y: scroll; height: 100%;">
+        <div class="container-fluid"> <!-- Use container-fluid to make the table span the entire width -->
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+						<th>icon</th>
+                        <th>Company Name</th>
+                        <th>Email</th>
+                        <th>Hotline</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+					{% if data %}
+                    {% for row in data %}
+                    <tr>
+                        <td>
+                            {% if row[19].startswith('image') %}
+                                <div class="text-center">
+    						        <img height=40px width=40px src="data:{{row[19]}};base64,{{ row[17] }}" alt="{{ row[18] }}" class="d-block w-100 img-fluid">
+    						    </div>
+                            {% else %}
+                                <div class="text-center">
+    						        <img height=40px width=40px class="d-block w-100 img-fluid rounded" src="{{url_for('static', filename='images/hire.png')}}">
+                                </div>
+    						{% endif %}
+                            
+                        </td>
+                        <td>{{ row[1] }}</td>
+                        <td>
+							<a href="mailto:{{ row[5] }}" claass="text-decoration-none">
+								<i class="bi bi-envelope-fill">{{ row[5] }}</i>
+							</a>
+						</td>
+                        <td><a href="tel:{{ row[6] }}" claass="text-decoration-none">
+								<i class="bi bi-telephone-fill">{{ row[6] }}</i>
+							</a>
+						</td>
+                        <td>
+                            <button type="button" class="btn btn_info" data-toggle="modal" data-target="#exampleModal{{ loop.index }}">
+                                Details
+                            </button>
+                            <!-- Popup for more details -->
+                            <div class="modal fade" id="exampleModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Company: {{ row[1] }}</h5>
+                                            <button type="button" class="close btn btn_cancel" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+										<div class="modal-body">
+										    <h5>Company Details</h5> <!-- company details go in this function-->
+										    <ul align=left>
+												<li align='center'><!-- company logo-->
+						                            {% if row[4].startswith('image') %} <!-- profile icon-->
+						    						    <div class="text-center">
+						    							<img height=40px width=40px src="data:{{row[4]}};base64,{{ row[2] }}" alt="{{ row[3] }}" class="d-block w-100 img-fluid">
+						                                </div>
+						    						{% else %}
+						    						    <div class="text-center">
+						                                    <img height=40px width=40px class="d-block w-100 img-fluid rounded" src="{{url_for('static', filename='images/hire.png')}}">
+						                                </div>
+						    						{% endif %}
+						                        </li>
+										        <li><strong>ID:</strong> {{ row[0] }}</li>
+										        <li><strong>Company Name:</strong> {{ row[1] }}</li>
+										        <li><strong>Email:</strong> {{ row[5] }}</li>
+										        <li><strong>Hotline:</strong> {{ row[6] }}</li>
+										        <li><strong>Link:</strong><a claass="text-decoration-none" href="{{ row[7] }}"> {{ row[7] }} </a></li>
+										        <li><strong>Location:</strong> {{ row[8] }}</li>
+										        <li><strong>Seeking:</strong> {{ row[9] }}</li>
+										        <li><strong>Description:</strong> {{ row[10] }}</li>
+										        <li><strong>Gender:</strong> {{ row[11] }}</li>
+										        <li><strong>Education:</strong> {{ row[12] }}</li>
+										        <li><strong>Experience:</strong> {{ row[13] }}</li>
+										        <li><strong>Skills:</strong> {{ row[14] }}</li>
+										        <li><strong>Applying:</strong> {{ row[15] }}</li>
+										        <li><strong>Benefits:</strong> {{ row[16] }}</li>
+										        <li><strong>Countries:</strong> {{ row[20] }}</li>
+										        <li><strong>Created At:</strong> {{ row[21] }}</li>
+										    </ul>
+										
+										    {% if row[19].startswith('image') %}
+										        <img src="data:{{row[19]}};base64,{{ row[17] }}" alt="{{ row[18] }}" class="d-block w-100 img-fluid rounded">
+										    {% else %}
+										        <p class='container'>Unsupported file type!</p>
+										    {% endif %}
+										</div>
+
+                                        <div class="modal-footer">
+											<!-- Button trigger modal -->
+											<button type="button" class="btn btn_success" data-toggle="modal" data-target="#deleteModal{{ loop.index }}">
+												Delete
+            								</button>
+											<!-- Button trigger modal -->
+								            <button type="button" class="btn btn_info" data-toggle="modal" data-target="#blockModal{{ loop.index }}">
+								                Block
+								            </button>
+                                            <button type="button" class="btn btn_cancel" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+							<!-- Delete Modal -->
+				            <div class="modal fade" id="deleteModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+				                <div class="modal-dialog" role="document">
+				                    <div class="modal-content">
+				                        <div class="modal-header">
+				                            <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+				                            <button type="button" class="close btn btn_cancel" data-dismiss="modal" aria-label="Close">
+				                                <span aria-hidden="true">&times;</span>
+				                            </button>
+				                        </div>
+				                        <div class="modal-body flash_primary">
+				                            Are you sure you want to delete this record?
+				                        </div>
+				                        <div class="modal-footer">
+				                            <!-- Form for delete submission -->
+				                            <form method="POST" action="{{url_for('delete_opportunity_bp.delete_opportunity')}}">
+				                                <!-- Include row ID as hidden input -->
+				                                <input type="hidden" name="row_id" value="{{ row[0] }}">
+				                                <button type="submit" class="btn btn_success">Delete</button>
+				                                <button type="button" class="btn btn_cancel" data-dismiss="modal">Cancel</button>
+				                            </form>
+				                        </div>
+				                    </div>
+				                </div>
+				            </div>
+							<!-- Block Modal -->
+				            <div class="modal fade" id="blockModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="blockModalLabel" aria-hidden="true">
+				                <div class="modal-dialog" role="document">
+				                    <div class="modal-content">
+				                        <div class="modal-header">
+				                            <h5 class="modal-title" id="blockModalLabel">Confirm Block</h5>
+				                            <button type="button" class="close btn btn_cancel" data-dismiss="modal" aria-label="Close">
+				                                <span aria-hidden="true">&times;</span>
+				                            </button>
+				                        </div>
+				                        <div class="modal-body flash_info">
+				                            Are you sure you want to block this user?
+				                        </div>
+				                        <div class="modal-footer">
+				                            <!-- Form for block submission -->
+				                            <form method="POST" action="{{ url_for('block_company_bp.block_company')}}">
+				                                <!-- Include row ID as hidden input -->
+				                                <input type="hidden" name="row_id" value="{{ row[0] }}">
+				                                <input type="hidden" name="row_email" value="{{ row[5] }}">
+				                                <button type="submit" class="btn btn_success">Block</button>
+				                                <button type="button" class="btn btn_cancel" data-dismiss="modal">Cancel</button>
+				                            </form>
+				                        </div>
+				                    </div>
+				                </div>
+				            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+					{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock body%}

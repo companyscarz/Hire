@@ -1,0 +1,58 @@
+{% extends "layout.html"%}
+
+{% block body %}
+     
+<div class='flashed'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+</div>
+	<h2 align=right class="typing-animation">Please Login!</h2>
+	<form class="row g-3" enctype="multipart/form-data" method=post>
+	    {{form.hidden_tag()}}
+		 
+		 <div class="mb-3">
+		 {{form.name.label(class="form-label")}}
+		 {{form.name(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.name.errors %}
+		    {% for error in form.name.errors %}
+		        <p class="fw-lighter flash_info">{{error}}</p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		 <div class="mb-3">
+		 {{form.email.label(class="form-label")}}
+		 {{form.email(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.email.errors %}
+		    {% for error in form.email.errors %}
+		        <p class="fw-lighter flash_info">{{error}}</p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		 <div class="mb-3">
+		 {{form.password.label(class="form-label")}}
+		 {{form.password(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.password.errors %}
+		    {% for error in form.password.errors %}
+		        <p class="fw-lighter flash_info">{{error}}</p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		 
+		<div>
+		  {{form.submit(class="btn btn_success")}}
+		</div>
+	 </form>
+
+{% endblock body%}
