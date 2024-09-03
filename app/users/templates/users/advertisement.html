@@ -1,0 +1,135 @@
+{%extends 'layout.html' %}
+
+ {% block head %}
+	<title>{{title}}</title>
+ {% endblock head %}
+ 
+{%block body%} 
+
+	<nav class="container navbar">
+		<ul class="nav nav-pills">
+	  		<li class="nav-item">
+		 		<a class="nav-link" aria-current="page" href="{{url_for('welcome_bp.Welcome') }}">
+					<b>
+						<img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_logo.png')}}">
+					</b>
+				</a>
+	  		</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('company_bp.Company') }}">Company</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('applicant_bp.Applicant') }}">Applicant</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page"  href="{{ url_for('applications_bp.Applications') }}">Applications</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('opportunities_bp.Opportunities') }}">Opportunities</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link active typing-animation" aria-current="page" href="{{ url_for('advertisement_bp.Advertisement') }}">Advertise</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('view_map_bp.View_map') }}">
+                    <img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_pin.png')}}">    
+                </a>
+		  	</li>
+			<li>
+  				<div class="container-fluid">
+    				<form class="d-flex" method="POST" action="{{url_for('advert_search_bp.Advert_search')}}">
+      					<input name="search_advert" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      						<button class="btn btn_info" type="submit">Search</button>
+    				</form>
+  				</div>
+			</li>
+		</ul>
+    </nav>
+
+		<div class='flashed container'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+	</div>
+
+
+	<form class="row g-3" method=post enctype="multipart/form-data">
+		{{form.csrf_token()}}
+		<div class="col-md-12">
+		 <div class="mb-3">
+		 {{form.email.label(class="form-label")}}
+		 {{form.email(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.email.errors %}
+		    {% for error in form.email.errors %}
+		        <p class="fw-lighter"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+
+		 <div class="mb-3 col-md-13">
+		 {{form.telphone.label(class="form-label")}}
+		 {{form.telphone(class="form-control", id="telephone_number")}}
+
+		 {% if form.telphone.errors %}
+		    {% for error in form.telphone.errors %}
+		        <p class="fw-lighter"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+			
+		<div class="mb-3">
+		 {{form.link.label(class="form-label")}}
+		 {{form.link(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.link.errors %}
+		    {% for error in form.link.errors %}
+		        <p class="fw-lighter"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.information.label(class="form-label")}}
+		 {{form.information(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.information.errors %}
+		    {% for error in form.information.errors %}
+		        <p class="fw-lighter"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+			<p id="table">Click button to select countries where to post
+				<button class="btn btn_info" type="button" onclick="geographyTable()">Click(optional)!</button>
+			</p>
+			
+			<form class="row g-3" method=post enctype="multipart/form-data">
+				{{form2.hidden_tag()}}
+				
+			<script type="text/javascript">
+				function geographyTable(){
+					const hello = '<table>{{form2.countries.label(class="form-label")}} {{form2.countries(class="form-control", id="exampleFormControlInput1")}}</table>';
+					
+					document.getElementById("table").innerHTML = hello;	
+				}
+			</script>
+				
+			</form>	
+		</div>
+			
+			
+		<div>
+		  {{form.submit(class="btn btn_success")}}
+		</div>
+	</form>
+{%endblock body%}
+
+{% block footer %} {% endblock footer %}

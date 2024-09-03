@@ -1,0 +1,158 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+    <title>{{title}}</title>
+{% endblock head %}
+ 
+{% block body %} 
+
+<nav class="container navbar">
+    <ul class="nav nav-pills">
+        <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{{url_for('welcome_bp.Welcome') }}">
+                <b>
+                    <img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_logo.png')}}">
+                </b>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active typing-animation" aria-current="page" href="{{ url_for('applications_bp.Applications') }}">Applications</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{{ url_for('view_map_bp.View_map') }}">
+                <img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_pin.png')}}">    
+            </a>
+        </li> 
+		<li>
+  			<div class="container-fluid">
+    			<form class="d-flex" method="POST" action="{{url_for('application_search_bp.Application_search')}}">
+      				<input name="search_applicant" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      					<button class="btn btn_info" type="submit">Search</button>
+    			</form>
+  			</div>
+		</li>     
+    </ul>
+</nav>
+
+<div class='flashed container'>
+    {% for message in get_flashed_messages() %}
+    <div class="alert flash_info alert-dismissible fade show" role="alert">
+        <p class="typing-animation">
+            {{message}}
+        </p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        </button>
+    </div>    
+    {% endfor %}
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Right Column with Table -->
+        <div class="col-md-12">
+            <div style="overflow-y: scroll; height: 100%;">
+                <!-- Data from Table 2 -->
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th align="right">Explore..</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if details %}
+                        {% for row in details %}
+                        <tr>
+                            <td>
+                                {{ row[1] }} 
+                                <br>
+                                Applying for {{row[5]}}.
+                                <br>
+                                <i>posted on {{row[14]}}</i>
+                                <br><!-- button to open popup for more details-->
+                                <button type="button" class="btn btn_success container" data-toggle="modal" data-target="#exampleModal{{ loop.index }}">
+                                    Details
+                                </button>
+                                <!-- function for pop up -->
+                                <div class="modal fade" id="exampleModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">{{row[1]}}</h5>
+                                                <button type="button" class="close btn btn_cancel" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <h5>Details</h5>
+                                                <ul align=left>
+                                                    <li><strong>Name:</strong> {{ row[1] }}</li>
+                                                    <li><strong>Email:</strong> {{ row[2] }}</li>
+                                                    <li><strong>Telphone:</strong> {{ row[3] }}</li>
+                                                    <li><strong>Gender:</strong> {{ row[4] }}</li>
+                                                    <li><strong>Position:</strong> {{ row[5] }}</li>
+                                                    <li><strong>Interest:</strong> {{ row[6] }}</li>
+                                                    <li><strong>Education:</strong> {{ row[7] }}</li>
+                                                    <li><strong>Experience:</strong> {{ row[8] }}</li>
+                                                    <li><strong>Skills:</strong> {{ row[9] }}</li>
+                                                    <li><strong>Posted on:</strong> {{ row[14] }}</li>
+                                                </ul>
+                                                <!-- Image and Paragraph in Popup -->
+                                                {% if row[12].startswith('image') %}
+                                                    <img src="data:{{row[12]}};base64,{{ row[10] }}" alt="{{ row[11] }}" class="d-block w-100 img-fluid rounded-start">
+                                                {% else %}
+                                                    <p align="center" class="container typing-animation">Unsupported file type!</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn_cancel container" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Display advertisements after odd ID posts -->
+                        {% if loop.index is odd and advertisement %}
+                        {% for ad in advertisement %}
+                        <tr>
+                            <td>
+                                {% if ad[6].startswith('image') %}
+                                    <a href="{{ ad[3] }}">
+                                        <img src="data:{{ad[6]}};base64,{{ ad[4] }}" alt="{{ ad[5] }}" class="d-block w-100 img-fluid rounded">
+                                    </a>
+                                {% elif ad[6].startswith('video') %}
+                                    <a href="{{ ad[3] }}">
+                                        <video controls class="d-block w-100 img-fluid rounded">
+                                            <source src="data:{{ad[6]}};base64,{{ ad[4] }}" type="{{ad[6]}}">
+                                        </video>
+                                    </a>
+                                {% else %}
+                                    <p align="center" class="container typing-animation">Unsupported file type!</p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                        
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // Initialize the Bootstrap Carousel
+  var myCarousel = document.querySelector('#carouselExampleControls')
+  var carousel = new bootstrap.Carousel(myCarousel, {
+    interval: 5000, // Set the interval for automatic slideshow (in milliseconds)
+    wrap: true // Enable looping of the Carousel
+  })
+</script>
+
+{% endblock body %}
+
+{% block footer %} {% endblock footer %}

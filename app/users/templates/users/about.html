@@ -1,0 +1,91 @@
+{%extends 'layout.html' %}
+
+ {% block head %}
+	<title>{{title}}</title>
+ {% endblock head %}
+ 
+{%block body%} 
+
+  <nav class="container navbar">
+		<ul class="nav nav-pills">
+	  		<li class="nav-item">
+		 		<a class="nav-link" aria-current="page" href="{{url_for('welcome_bp.Welcome') }}">
+					<b>
+						<img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_logo.png')}}">
+					</b>
+				</a>
+	  		</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('company_bp.Company') }}">Company</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('applicant_bp.Applicant') }}">Applicant</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page"  href="{{ url_for('applications_bp.Applications') }}">Applications</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('opportunities_bp.Opportunities') }}">Opportunities</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('advertisement_bp.Advertisement') }}">Advertise</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('view_map_bp.View_map') }}">
+                <img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_pin.png')}}">    
+                </a>
+		  	</li>	  	 
+		</ul>
+    </nav>
+
+		<div class='flashed container'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+	</div>
+
+
+    <h1><strong><center><big>Hire</big></center></strong></h1>
+    <h3><strong><center><big>The worldly opportunities</big></center></strong></h3>
+	 <div>
+	 <br>
+		<center><h3>         
+			 Are you looking for a job and you are tired of working?
+			 <br>
+			 Does your compnay need a worker that is qualified? 
+			 <br>
+			 Do you need your product to get known?
+			 <br>
+		</h3></center>			 
+	 </div>
+	 <div>
+	 	<center><big><h2>Well look no further, because you at the right place</h2></big></center>
+	 </div>
+
+	<form class="row g-3" enctype="multipart/form-data" method=post>
+		{{form.hidden_tag()}}
+		 <div class="mb-3">
+		 <h5><b>{{form.suggestion.label(class="form-label")}}</b></h5>
+		 {{form.suggestion(class="form-control")}}
+
+		 {% if form.suggestion.errors %}
+		    {% for error in form.suggestion.errors %}
+		        <p class="fw-lighter">{{error}}</p>
+		    {% endfor %}
+		 {% endif %}
+		 </div>
+		
+		<div>
+		  <b><u>{{form.submit(class="btn btn_success")}}</u></b>
+		</div>
+	 </form>
+
+ {%endblock body%}
+  
+{% block footer %} {% endblock footer %}

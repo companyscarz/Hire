@@ -1,0 +1,253 @@
+{%extends 'layout.html' %}
+
+ {% block head %}
+	<title>{{title}}</title>
+ {% endblock head %}
+ 
+{%block body%} 
+
+	<nav class="container navbar">
+		<ul class="nav nav-pills">
+	  		<li class="nav-item">
+		 		<a class="nav-link"  aria-current="page" href="{{url_for('welcome_bp.Welcome') }}">
+					<b>
+						<img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_logo.png')}}">
+					</b>
+				</a>
+	  		</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link active typing-animation" aria-current="page" href="{{ url_for('company_bp.Company') }}">Company</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('applicant_bp.Applicant') }}">Applicant</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page"  href="{{ url_for('applications_bp.Applications') }}">Applications</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('opportunities_bp.Opportunities') }}">Opportunities</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('advertisement_bp.Advertisement') }}">Advertise</a>
+		  	</li>
+		  	<li class="nav-item">
+			 	<a class="nav-link" aria-current="page" href="{{ url_for('view_map_bp.View_map') }}">
+                    <img height=30px width=30px class="img-fluid rounded" src="{{url_for('static', filename='images/hire_pin.png')}}">    
+                </a>
+		  	</li>	  	 
+		</ul>
+    </nav>
+
+		<div class='flashed container'>
+		{% for message in get_flashed_messages() %}
+		<div class="alert flash_info alert-dismissible fade show" role="alert">
+			<p class="typing-animation">
+				{{message}}
+			</p>
+	  	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+		</button>
+		</div>	
+		{% endfor %}
+	</div>
+
+  
+	<form class="row g-3" enctype="multipart/form-data" method=post>
+		{{form.hidden_tag()}}
+		<div class="col-md-12">
+		 <div class="mb-3">
+		<div class="mb-3">
+		 {{form.companyname.label(class="form-label")}}
+		 {{form.companyname(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.companyname.errors %}
+		    {% for error in form.companyname.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+		 {{form.company_logo.label(class="form-label")}}
+		 {{form.company_logo(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.company_logo.errors %}
+		    {% for error in form.company_logo.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+			 
+		<div class="mb-3">
+		 {{form.companyemail.label(class="form-label")}}
+		 {{form.companyemail(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.companyemail.errors %}
+		    {% for error in form.companyemail.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+		 {{form.companyhotline.label(class="form-label")}}
+		 {{form.companyhotline(class="form-control", id="telephone_number")}}
+
+		 {% if form.companyhotline.errors %}
+		    {% for error in form.companyhotline.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+			
+		<div class="mb-3">
+		 {{form.link.label(class="form-label")}}
+		 {{form.link(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.link.errors %}
+		    {% for error in form.link.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+		 {{form.location.label(class="form-label")}}
+		 {{form.location(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.location.errors %}
+		    {% for error in form.location.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+		 {{form.seeking.label(class="form-label")}}
+		 {{form.seeking(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.seeking.errors %}
+		    {% for error in form.seeking.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.description.label(class="form-label")}}
+		 {{form.description(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.description.errors %}
+		    {% for error in form.description.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.gender.label(class="form-label")}}
+		 	<span id="exampleFormControlInput1">
+				 {{form.gender(class="dropdown-toggle")}}
+		 	</span>
+		 {% if form.gender.errors %}
+		    {% for error in form.gender.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.education.label(class="form-label")}}
+			<span>
+		 		{{form.education(class="dropdown-toggle")}}
+			</span>
+		 {% if form.education.errors %}
+		    {% for error in form.education.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.experience.label(class="form-label")}}
+		 {{form.experience(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.experience.errors %}
+		    {% for error in form.experience.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.skills.label(class="form-label")}}
+		 {{form.skills(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.skills.errors %}
+		    {% for error in form.skills.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.applying.label(class="form-label")}}
+		 {{form.applying(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.applying.errors %}
+		    {% for error in form.applying.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+
+		<div class="mb-3">
+		 {{form.benefits.label(class="form-label")}}
+		 {{form.benefits(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.benefits.errors %}
+		    {% for error in form.benefits.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+		 {{form.details.label(class="form-label")}}
+		 {{form.details(class="form-control", id="exampleFormControlInput1")}}
+
+		 {% if form.details.errors %}
+		    {% for error in form.details.errors %}
+		        <p class="fw-lighter flash_info"><blink>{{error}}</blink></p>
+		    {% endfor %}
+		 {% endif %}
+		</div>
+		
+		<div class="mb-3">
+			<p id="table">Click button to select countries where to post
+				<button class="btn btn_info" type="button" onclick="geographyTable()">Click(optional)!
+				</button>
+			</p>
+			
+			<form class="row g-3" enctype="multipart/form-data" method=post>
+				{{form2.hidden_tag()}}
+				
+			<script type="text/javascript">
+				function geographyTable(){
+					const hello = '<table>{{form2.countries.label(class="form-label")}} {{form2.countries(class="form-control", id="exampleFormControlInput1")}}</table>';
+					
+					document.getElementById("table").innerHTML = hello;	
+				}
+			</script>
+				
+			</form>	
+		</div>
+			
+<!-- recaptcha form goes here-->
+		
+		<div>
+		  {{form.submit(class="btn btn_success")}}
+		</div>
+	</form>
+{%endblock body%}
+
+{% block footer %} {% endblock footer %}
