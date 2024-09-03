@@ -1,0 +1,257 @@
+body{
+    font-family: Comfortaa;
+    background: linear-gradient(to right, #0172afff, #74febdff);
+    height: 100vh;
+    margin: 0;
+	color:black;
+}
+
+
+/* Style the navigation bar container */
+.navbar {
+    display: flex;
+    overflow-x: auto; /* Allow horizontal scrolling */
+    white-space: nowrap; /* Prevent wrapping */
+    background-color: linear-gradient(135deg, #FF4066, FFF16A); /* Background color of the nav bar */
+    padding: 10px 0;
+}
+
+/* Ensure the list does not wrap */
+.navbar ul {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+/* Style for each list item */
+.navbar li {
+    margin: 0 10px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Style for the list links */
+.navbar a {
+    display: block;
+    padding: 12px 20px;
+    background: linear-gradient(to right, #FF512F, #DD2476); /* Gradient background */
+    border-radius: 20px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Shadow effect */
+        }
+
+/* Hover effect for links */
+.navbar a:hover {
+    background: linear-gradient(135deg, #0097a7, purple); /* Reverse gradient on hover */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
+    transform: translateY(-3px); /* Lift the link slightly */
+}
+
+/* Styling the scrollbar */
+.navbar::-webkit-scrollbar {
+    height: 8px;
+}
+
+.navbar::-webkit-scrollbar-thumb {
+    background: #555; /* Color of the scrollbar thumb */
+    border-radius: 4px;
+}
+
+.navbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #FF4066, FFF16A); /* Darker color on hover */
+}
+
+img{
+	align:center;
+	padding: 1% 1% 1% 1%;
+}
+
+.flash_primary{
+    background: linear-gradient(135deg, #FF4066, FFF16A);
+    /*height: 100vh;*/
+    margin: 0;
+}
+
+.flash_info{
+    background: linear-gradient(135deg, #6157FF, #EE49FD);
+    /*height: 100vh;*/
+    margin: 0;
+}
+
+/* success Button styling */
+.btn_success {
+    background: linear-gradient(to right, #6157FF, #EE49FD); /* Gradient colors */
+    border: none;
+    border-radius: 25px; /* Rounded corners */
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow effect */
+}
+
+/* Hover effect */
+.btn_success:hover {
+    background: linear-gradient(to right, #EE49FD, #6157FF); /* Reverse gradient on hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
+    transform: translateY(-3px); /* Lift the button slightly */
+}
+
+/* information Button styling */
+.btn_info {
+    background: linear-gradient(to right, #FF7E5F, #FEB47B); /* Gradient colors */
+    border: none;
+    border-radius: 10px; /* Rounded corners */
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow effect */
+}
+
+/* Hover effect */
+.btn_info:hover {
+    background: linear-gradient(to right, #FEB47B, #FF7E5F); /* Reverse gradient on hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
+    transform: translateY(-3px); /* Lift the button slightly */
+}
+
+/* information Button styling */
+.btn_cancel {
+    background: linear-gradient(135deg, #0097a7, purple); /* Gradient colors */
+    border: none;
+    border-radius: 5px; /* Rounded corners */
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow effect */
+}
+
+/* Hover effect */
+.btn_cancel:hover {
+    background: linear-gradient(135deg, purple, #0097a7); /* Reverse gradient on hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
+    transform: translateY(-3px); /* Lift the button slightly */
+}
+
+/* Style for blurring the screen */
+#blur-overlay {
+    position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #FF4066, FFF16A);
+	backdrop-filter: blur(10px);
+	visibility: hidden;
+	z-index: 9999;
+}
+
+hr{
+	color:white;
+	height:10px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: linear-gradient(135deg, #FF4066, FFF16A);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: black;
+  padding: 20px;
+  border: 1px solid linear-gradient(135deg, #0097a7, purple);
+  border-radius: 5px;
+  text-align: center;
+  color:white;
+}
+
+.close-modal-btn {
+  background-color: #ccc;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.carousel-item {
+	text-align: center;
+        }
+
+.carousel-fixed {
+    position: fixed;
+    top: 40;
+	width: 300px; /* Adjust the width as needed */
+    z-index: 1000; /* Adjust z-index as needed */
+        }
+
+/* Custom CSS for Carousel next and previous buttons */
+.carousel-control-prev,
+.carousel-control-next {
+  width: 3rem; /* Adjust width as needed */
+  height: 3rem; /* Adjust height as needed */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background color */
+  border-radius: 50%; /* Rounded corners */
+}
+
+/* Custom CSS for Carousel control icons */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background color */
+  border-radius: 50%; /* Rounded corners */
+  color: black; /* Icon color */
+}
+
+
+/*bliking cursor for welcome page*/
+    /* Keyframes for typing animation */
+    @keyframes typing {
+        from {
+            width: 0;
+        }
+        to {
+            width: 100%;
+        }
+    }
+
+/* Animation for typing effect */
+.typing-animation {
+    overflow: hidden; /* Ensures the text remains in one line */
+    /* border-right: .13em solid white; /* Creates the typing cursor effect */
+	white-space: nowrap; /* Ensures the text does not wrap */
+    margin: 0; /* Removes any margin for better alignment */
+	letter-spacing: .0em; /* Adjust spacing between letters */
+    animation: typing 3s steps(40, end), blink-caret .75s step-end infinite; /* Defines the typing animation */
+    }
+
+/* Blinking cursor animation */
+@keyframes blink-caret {
+       from, to {
+          border-color: transparent; /* Makes the cursor transparent */
+       }
+       50% {
+        border-color: gray; /* Sets the color of the cursor */
+    }
+}
+
