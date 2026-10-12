@@ -1,0 +1,12 @@
+# Hire Cloud is the new Flask service under app/hire_cloud.
+# Keep the legacy application out of this service's runtime entrypoint.
+providers = ["python"]
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.12"
+
+[phases.install]
+cmds = ["pip install -r app/cloud_requirements.txt"]
+
+[start]
+cmd = "cd app && gunicorn --bind 0.0.0.0:${PORT:-8000} 'hire_cloud:create_app()' --workers 2 --timeout 120"
