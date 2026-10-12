@@ -134,3 +134,28 @@ def test_dashboard_requires_authentication(client):
     response = client.get("/dashboard")
     assert response.status_code == 302
     assert "/auth/login" in response.headers["Location"]
+
+
+def test_login_rejects_backslash_based_external_redirect(client, app):
+    with app.app_context():
+        user = User(
+            email="redirect@example.test",
+            display_name="Redirect User",
+            password_hash=generate_password_hash("a-long-test-password"),
+        )
+        tenant = Tenant(name="Redirect Workspace", slug="redirect-workspace")
+        db.session.add_all([user, tenant])
+        db.session.flush()
+        db.session.add(Membership(user_id=user.id, tenant_id=tenant.id, role="owner"))
+        db.session.commit()
+
+    path = "/auth/login?next=%2F%5Cevil.example"
+    token = _csrf(client, path)
+    response = client.post(path, data={
+        "csrf_token": token,
+        "email": "redirect@example.test",
+        "password": "a-long-test-password",
+    })
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/dashboard")
+    assert "evil.example" not in response.headers["Location"]
