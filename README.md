@@ -63,6 +63,8 @@ Health endpoints:
 - `GET /health/live` — process liveness.
 - `GET /health/ready` — readiness, including database connectivity.
 
+**PWA update rule:** whenever the manifest or cached shell changes, bump `CACHE_NAME` in `app/hire_cloud/static/js/service-worker.js` and the manifest query version in the templates and service-worker shell list. The worker removes the previous Hire shell cache after the new version activates.
+
 ## Security status and warnings
 
 - Secrets that were previously committed to `app/settings.py` have been removed from the current version of that file and moved to environment-based configuration. **Rotate the old credentials at their providers**; deleting them from the latest revision does not remove them from Git history.
