@@ -2,7 +2,8 @@
   "id": "/",
   "name": "Hire Cloud by ScarZ",
   "short_name": "Hire",
-  "description": "Deploy, monitor, and manage your developer projects with Hire Cloud.",
+  "description": "Connect your code, deploy projects, and manage developer hosting with Hire Cloud.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,6 +11,7 @@
   "background_color": "#081321",
   "theme_color": "#0a1628",
   "categories": ["developer", "productivity", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/static/icons/hire-icon-192.svg",
@@ -22,6 +24,32 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create account",
+      "short_name": "Sign up",
+      "url": "/auth/register",
+      "icons": [
+        {
+          "src": "/static/icons/hire-icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Open workspace",
+      "short_name": "Workspace",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/static/icons/hire-icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 }
