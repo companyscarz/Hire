@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="description" content="Hire Cloud by Company ScarZ — deploy and monitor your applications.">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/hire-icon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <title>Hire Cloud · Developer hosting</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Hire Cloud home">
+        <span class="brand-mark">H</span>
+        <span><strong>Hire</strong><small>SCARZ CLOUD</small></span>
+      </a>
+      <p class="nav-label">WORKSPACE</p>
+      <nav aria-label="Main navigation">
+        <a class="nav-item active" href="#overview"><span>▦</span> Overview</a>
+        <a class="nav-item" href="#deployments"><span>⌘</span> Deployments</a>
+        <a class="nav-item" href="#usage"><span>◴</span> Resource usage</a>
+        <a class="nav-item" href="#billing"><span>◇</span> Subscription</a>
+        <a class="nav-item" href="#storage"><span>▤</span> Buckets & storage</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="status-dot"></span>
+        <span>Platform foundation</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">DEVELOPER WORKSPACE</p>
+          <h1>Welcome to Hire Cloud</h1>
+          <p class="subtitle">One place to deploy, monitor, and manage your projects.</p>
+        </div>
+        <button id="install-button" class="button button-secondary" hidden>Install Hire</button>
+      </header>
+
+      <section class="notice" aria-label="Development status">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>Early access foundation</strong>
+          <p>Account security, PostgreSQL migrations, Git deployment, billing, and live resource metrics are being built in stages. No real usage or billing data is shown yet.</p>
+        </div>
+      </section>
+
+      <section id="overview" class="metric-grid" aria-label="Resource overview">
+        <article class="metric-card">
+          <div class="metric-heading"><span class="metric-icon">CPU</span><span class="muted">Compute</span></div>
+          <p class="metric-value">—</p>
+          <p class="metric-foot">Available after a service is connected</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span class="metric-icon">RAM</span><span class="muted">Memory</span></div>
+          <p class="metric-value">—</p>
+          <p class="metric-foot">Usage and plan limit will appear here</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span class="metric-icon">SSD</span><span class="muted">Storage</span></div>
+          <p class="metric-value">—</p>
+          <p class="metric-foot">Volumes, databases, and object storage</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span class="metric-icon">↕</span><span class="muted">Traffic</span></div>
+          <p class="metric-value">—</p>
+          <p class="metric-foot">Monthly transfer will be measured here</p>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article id="deployments" class="panel deployment-panel">
+          <div class="panel-header">
+            <div><p class="eyebrow">YOUR PROJECTS</p><h2>Deployments</h2></div>
+            <span class="pill pill-neutral">Not connected</span>
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">⌘</div>
+            <h3>Your first deployment starts here</h3>
+            <p>Git provider connections and controlled Dokploy provisioning are the next implementation milestone.</p>
+            <span class="button button-disabled" aria-disabled="true">Git deployment coming next</span>
+          </div>
+        </article>
+
+        <article id="billing" class="panel subscription-panel">
+          <div class="panel-header">
+            <div><p class="eyebrow">BILLING</p><h2>Subscription</h2></div>
+            <span class="pill pill-neutral">Not active</span>
+          </div>
+          <div class="plan-placeholder">
+            <div class="plan-symbol">◇</div>
+            <div><strong>No active plan</strong><p>Plan selection and payment integration are not enabled yet.</p></div>
+          </div>
+          <div class="separator"></div>
+          <div class="detail-row"><span>Renewal date</span><strong>—</strong></div>
+          <div class="detail-row"><span>Current invoice</span><strong>—</strong></div>
+        </article>
+      </section>
+
+      <section class="content-grid lower-grid">
+        <article id="usage" class="panel">
+          <div class="panel-header"><div><p class="eyebrow">OBSERVABILITY</p><h2>Resource history</h2></div><span class="pill pill-neutral">Awaiting metrics</span></div>
+          <div class="chart-placeholder">
+            <div class="chart-lines"><i></i><i></i><i></i><i></i></div>
+            <p>Usage charts will appear after metrics collection is connected.</p>
+          </div>
+        </article>
+        <article id="storage" class="panel">
+          <div class="panel-header"><div><p class="eyebrow">OBJECT STORAGE</p><h2>Buckets & storage</h2></div><span class="pill pill-neutral">Not connected</span></div>
+          <div class="storage-info">
+            <div class="storage-symbol">▤</div>
+            <div><strong>Private by default</strong><p>Bucket creation, scoped access, and storage quotas will be added after the tenant security layer.</p></div>
+          </div>
+        </article>
+      </section>
+
+      <footer><span>Hire Cloud</span><span>Built by Company ScarZ</span><span>Security-first developer hosting</span></footer>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>
