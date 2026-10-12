@@ -79,6 +79,14 @@ def test_manifest_is_standalone_and_has_large_icons(client):
     assert {icon["sizes"] for icon in manifest["icons"]} >= {"192x192", "512x512"}
 
 
+
+def test_security_headers_restrict_forms_and_framing(client):
+    response = client.get("/")
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert "form-action 'self'" in response.headers["Content-Security-Policy"]
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+
+
 def test_production_rejects_sqlite_database():
     with pytest.raises(RuntimeError, match="requires PostgreSQL"):
         create_app({
