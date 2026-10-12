@@ -54,7 +54,7 @@ flask --app 'hire_cloud:create_app()' db upgrade
 gunicorn --bind 0.0.0.0:8000 'hire_cloud:create_app()'
 ```
 
-**Migration status:** an initial Flask-Migrate revision is now checked in under `app/migrations/versions/`. CI applies it to a disposable SQLite database and checks for model drift. Before production, run the same migration against a staging PostgreSQL database and review its schema effects. Do not run `db init` or generate a new migration during deployment. Automated tests use temporary SQLite; production requires PostgreSQL.
+**Migration status:** checked-in Flask-Migrate revisions live under `app/migrations/versions/`. CI applies them to a disposable PostgreSQL database and checks model/migration drift. Do not run `db init` or generate a new migration during deployment. The Nixpacks startup script applies pending revisions before Gunicorn starts.
 
 Implemented account routes include registration, email verification, login/logout, password recovery, resend verification, authenticated `GET /dashboard`, and tenant-scoped `GET /api/workspace/projects`. Password reset tokens are single-use and time-limited. MFA, tenant switching, billing, live metrics, Git OAuth, provisioning, and object storage are not implemented yet.
 
