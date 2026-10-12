@@ -1,9 +1,32 @@
 import re
 
-from werkzeug.security import check_password_hash
+import pytest
+from werkzeug.security import check_password_hash, generate_password_hash
 
+from hire_cloud import create_app
 from hire_cloud.extensions import db
 from hire_cloud.models import CloudProject, Membership, Tenant, User
+
+
+@pytest.fixture()
+def app():
+    app = create_app({
+        "TESTING": True,
+        "APP_ENV": "testing",
+        "SECRET_KEY": "test-only-secret-key",
+        "SQLALCHEMY_DATABASE_URI": "sqlite://",
+        "SQLALCHEMY_ENGINE_OPTIONS": {},
+    })
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
 
 
 def _csrf(client, path):
@@ -50,7 +73,7 @@ def test_login_and_logout_require_valid_csrf(client, app):
         user = User(
             email="login@example.test",
             display_name="Login User",
-            password_hash=__import__("werkzeug.security", fromlist=["generate_password_hash"]).generate_password_hash("a-long-test-password"),
+            password_hash=generate_password_hash("a-long-test-password"),
         )
         tenant = Tenant(name="Login Workspace", slug="login-workspace")
         db.session.add_all([user, tenant])
