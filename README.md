@@ -50,8 +50,7 @@ source .venv/bin/activate
 python -m pip install -r cloud_requirements.txt
 cp .env.example .env
 # Set DATABASE_URL to a local PostgreSQL database and set SECRET_KEY.
-flask --app 'hire_cloud:create_app()' db upgrade
-gunicorn --bind 0.0.0.0:8000 'hire_cloud:create_app()'
+bash start_hire_cloud.sh
 ```
 
 **Migration status:** checked-in Flask-Migrate revisions live under `app/migrations/versions/`. CI applies them to a disposable PostgreSQL database and checks model/migration drift. Do not run `db init` or generate a new migration during deployment. The Nixpacks startup script applies pending revisions before Gunicorn starts.
