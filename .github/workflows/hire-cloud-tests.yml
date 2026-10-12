@@ -15,6 +15,7 @@ on:
     branches: [main, pre-main]
     paths:
       - "nixpacks.toml"
+      - "requirements.txt"
       - "app/hire_cloud/**"
       - "app/migrations/**"
       - "app/tests/**"
