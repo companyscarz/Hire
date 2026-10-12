@@ -19,10 +19,17 @@
   }
 
   if ("serviceWorker" in navigator && window.location.protocol === "https:") {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js").catch(() => {
-        // Installation remains available even if offline caching cannot register.
-      });
+    window.addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register(
+          "/service-worker.js",
+          { updateViaCache: "none" }
+        );
+        // Ask the browser to check for a changed worker when the app is opened.
+        await registration.update();
+      } catch (_) {
+        // The online app remains usable if offline caching cannot register.
+      }
     });
   }
 })();
