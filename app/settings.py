@@ -1,6 +1,10 @@
 import os
 import secrets
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from users.models.models_company import COmpany
 from users.models.models_applicant import APplicant
 from users.models.models_advertisement import ADvertisement
