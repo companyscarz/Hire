@@ -32,4 +32,4 @@ jobs:
       - name: Install Hire Cloud dependencies
         run: python -m pip install -r cloud_requirements.txt
       - name: Run foundation tests
-        run: pytest -q tests/test_hire_cloud_foundation.py
+        run: python -m pytest -q tests/test_hire_cloud_foundation.py
