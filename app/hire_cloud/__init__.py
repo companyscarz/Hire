@@ -8,7 +8,7 @@ import os
 import secrets
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template, send_from_directory
 from sqlalchemy import text
 
 from .extensions import db, migrate
@@ -52,12 +52,14 @@ def create_app(test_config=None):
 
     @app.get("/")
     def index():
-        return jsonify({
-            "name": "Hire",
-            "product": "Hire Cloud",
-            "status": "foundation",
-            "message": "Developer hosting control plane",
-        })
+        return render_template("index.html")
+
+    @app.get("/service-worker.js")
+    def service_worker():
+        response = send_from_directory(app.static_folder, "js/service-worker.js")
+        response.headers["Service-Worker-Allowed"] = "/"
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     @app.get("/health/live")
     def health_live():
