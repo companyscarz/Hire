@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Hire Cloud by ScarZ",
+  "short_name": "Hire",
+  "description": "Deploy, monitor, and manage your developer projects with Hire Cloud.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#081321",
+  "theme_color": "#0a1628",
+  "categories": ["developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/static/icons/hire-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/hire-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
