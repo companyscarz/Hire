@@ -51,3 +51,27 @@ def test_tenant_membership_is_unique(app):
         with pytest.raises(Exception):
             db.session.commit()
         db.session.rollback()
+
+
+
+def test_dashboard_shell_and_manifest_are_served(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Welcome to Hire Cloud" in response.data
+    assert b"manifest.webmanifest" in response.data
+
+
+def test_root_scoped_service_worker_is_served(client):
+    response = client.get("/service-worker.js")
+    assert response.status_code == 200
+    assert b"addEventListener" in response.data
+    assert response.headers["Service-Worker-Allowed"] == "/"
+
+
+def test_production_rejects_sqlite_database():
+    with pytest.raises(RuntimeError, match="requires PostgreSQL"):
+        create_app({
+            "APP_ENV": "production",
+            "SECRET_KEY": "test-only-secret-key",
+            "SQLALCHEMY_DATABASE_URI": "sqlite://",
+        })
