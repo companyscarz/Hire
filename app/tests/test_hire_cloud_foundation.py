@@ -66,6 +66,17 @@ def test_root_scoped_service_worker_is_served(client):
     assert response.status_code == 200
     assert b"addEventListener" in response.data
     assert response.headers["Service-Worker-Allowed"] == "/"
+    assert b'url.pathname.startsWith("/auth/")' in response.data
+    assert b'url.pathname === "/dashboard"' in response.data
+
+
+def test_manifest_is_standalone_and_has_large_icons(client):
+    response = client.get("/static/manifest.webmanifest")
+    assert response.status_code == 200
+    manifest = response.get_json()
+    assert manifest["display"] == "standalone"
+    assert manifest["start_url"] == "/"
+    assert {icon["sizes"] for icon in manifest["icons"]} >= {"192x192", "512x512"}
 
 
 def test_production_rejects_sqlite_database():
