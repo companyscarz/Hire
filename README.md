@@ -33,6 +33,10 @@ Add these values in Dokploy's server-side environment settings (never commit rea
 - `SECRET_KEY` — a long random secret, at least 32 random bytes
 - `DATABASE_URL` — private PostgreSQL connection string, preferably `postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME`
 - `PORT=8000` only if Dokploy does not already configure the internal port
+- `PUBLIC_BASE_URL=https://your-public-domain` — canonical HTTPS origin for verification/reset links
+- `REDIS_URL=redis://...` or `rediss://...` — private Redis connection for shared rate limiting
+- `MAIL_SERVER`, `MAIL_PORT=587`, `MAIL_USE_TLS=true`, and `MAIL_DEFAULT_SENDER`
+- `MAIL_USERNAME` and `MAIL_PASSWORD` when required by your SMTP provider
 
 The PostgreSQL user should be restricted to this application and must not be a superuser. Do not expose the database publicly unless properly protected.
 
