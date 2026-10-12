@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a1628">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='20261012.1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <title>{% if mode == 'register' %}Create account{% elif mode == 'forgot' %}Reset password{% elif mode == 'resend' %}Verify email{% else %}Sign in{% endif %} · Hire Cloud</title>
 </head>
