@@ -38,7 +38,15 @@
           <h1>Welcome to Hire Cloud</h1>
           <p class="subtitle">One place to deploy, monitor, and manage your projects.</p>
         </div>
-        <button id="install-button" class="button button-secondary" hidden>Install Hire</button>
+        <div class="top-actions">
+          {% if current_user %}
+          <a class="button button-secondary" href="{{ url_for('workspace') }}">Open workspace</a>
+          {% else %}
+          <a class="button button-secondary" href="{{ url_for('auth.login') }}">Sign in</a>
+          <a class="button button-primary" href="{{ url_for('auth.register') }}">Get started</a>
+          {% endif %}
+          <button id="install-button" class="button button-secondary" hidden>Install Hire</button>
+        </div>
       </header>
 
       <section class="notice" aria-label="Development status">
