@@ -1,9 +1,10 @@
-name: Hire Cloud foundation tests
+name: Hire Cloud tests
 
 on:
   push:
     branches: [pre-main]
     paths:
+      - "nixpacks.toml"
       - "app/hire_cloud/**"
       - "app/tests/**"
       - "app/cloud_requirements.txt"
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches: [main, pre-main]
     paths:
+      - "nixpacks.toml"
       - "app/hire_cloud/**"
       - "app/tests/**"
       - "app/cloud_requirements.txt"
@@ -31,5 +33,5 @@ jobs:
           cache-dependency-path: app/cloud_requirements.txt
       - name: Install Hire Cloud dependencies
         run: python -m pip install -r cloud_requirements.txt
-      - name: Run foundation tests
-        run: python -m pytest -q tests/test_hire_cloud_foundation.py
+      - name: Run all Hire Cloud tests
+        run: python -m pytest -q tests/
