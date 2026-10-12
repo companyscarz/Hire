@@ -133,6 +133,7 @@ def test_workspace_projects_are_scoped_to_signed_in_tenant(client, app):
 
     with client.session_transaction() as session:
         session["user_id"] = user_a_id
+        session["session_version"] = 0
         session["_csrf_token"] = "test-csrf"
 
     response = client.get("/api/workspace/projects")
