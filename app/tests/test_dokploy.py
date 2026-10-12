@@ -91,3 +91,36 @@ def test_invalid_json_is_rejected(monkeypatch):
     client = DokployClient("https://dokploy.example.com", "test")
     with pytest.raises(DokployError, match="invalid JSON"):
         client.get_server_metrics()
+
+
+
+def test_client_rejects_base_url_path_prefix():
+    with pytest.raises(DokployError, match="origin only"):
+        DokployClient(base_url="https://dokploy.example.com/proxy", api_key="test")
+
+
+def test_customer_permissions_are_least_privilege_and_project_scoped():
+    permissions = DokployClient.customer_permissions(
+        project_ids=["project-123"],
+        environment_ids=["environment-456"],
+        service_ids=["service-789"],
+    )
+    assert permissions["accessedProjects"] == ["project-123"]
+    assert permissions["accessedEnvironments"] == ["environment-456"]
+    assert permissions["accessedServices"] == ["service-789"]
+    assert permissions["accessedServers"] == []
+    assert permissions["accessedGitProviders"] == []
+    assert all(value is False for key, value in permissions.items() if key.startswith("can"))
+
+
+@pytest.mark.parametrize("project_ids", [[], None, "project-123", [""], ["project-123", "project-123"]])
+def test_customer_permissions_require_valid_explicit_project_mapping(project_ids):
+    with pytest.raises(DokployError):
+        DokployClient.customer_permissions(project_ids=project_ids)
+
+
+def test_customer_permissions_rejects_invalid_environment_and_service_ids():
+    with pytest.raises(DokployError):
+        DokployClient.customer_permissions(project_ids=["p1"], environment_ids=[None])
+    with pytest.raises(DokployError):
+        DokployClient.customer_permissions(project_ids=["p1"], service_ids=["x" * 161])
