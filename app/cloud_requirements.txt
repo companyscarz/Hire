@@ -1,0 +1,9 @@
+# New Hire Cloud service dependencies; kept separate from the legacy app's
+# oversized Pydroid-oriented requirements while the migration is in progress.
+Flask>=3.0,<4
+Flask-SQLAlchemy>=3.1,<4
+Flask-Migrate>=4,<5
+psycopg[binary]>=3.2,<4
+python-dotenv>=1.0,<2
+gunicorn>=22,<24
+pytest>=8,<9
