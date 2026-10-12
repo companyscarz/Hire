@@ -1,0 +1,35 @@
+name: Hire Cloud foundation tests
+
+on:
+  push:
+    branches: [pre-main]
+    paths:
+      - "app/hire_cloud/**"
+      - "app/tests/**"
+      - "app/cloud_requirements.txt"
+      - ".github/workflows/hire-cloud-tests.yml"
+  pull_request:
+    branches: [main, pre-main]
+    paths:
+      - "app/hire_cloud/**"
+      - "app/tests/**"
+      - "app/cloud_requirements.txt"
+      - ".github/workflows/hire-cloud-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/cloud_requirements.txt
+      - name: Install Hire Cloud dependencies
+        run: python -m pip install -r cloud_requirements.txt
+      - name: Run foundation tests
+        run: pytest -q tests/test_hire_cloud_foundation.py
