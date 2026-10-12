@@ -6,4 +6,5 @@ providers = ["python"]
 NIXPACKS_PYTHON_VERSION = "3.12"
 
 [start]
-cmd = "cd app && gunicorn --bind 0.0.0.0:${PORT:-8000} 'hire_cloud:create_app()' --workers 2 --timeout 120"
+# The entrypoint applies checked-in migrations before Gunicorn accepts requests.
+cmd = "bash app/start_hire_cloud.sh"
