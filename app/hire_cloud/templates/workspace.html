@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1628">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <title>Workspace · Hire Cloud</title>
+</head>
+<body>
+  <main class="workspace-page">
+    <header class="workspace-topbar">
+      <a class="brand" href="/"><span class="brand-mark">H</span><span><strong>Hire</strong><small>SCARZ CLOUD</small></span></a>
+      <div class="account-area"><span>{{ current_user.display_name }}</span><form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button button-secondary" type="submit">Sign out</button></form></div>
+    </header>
+    <section class="workspace-welcome">
+      <p class="eyebrow">YOUR WORKSPACE</p>
+      <h1>{{ tenant.name if tenant else 'Your workspace' }}</h1>
+      <p class="subtitle">Your account is ready. We are building the safe deployment and resource-management layer next.</p>
+    </section>
+    <section class="workspace-grid">
+      <article class="panel"><p class="eyebrow">ACCOUNT</p><h2>{{ current_user.display_name }}</h2><p>{{ current_user.email }}</p><span class="pill pill-neutral">{% if current_user.email_verified_at %}Email verified{% else %}Email verification pending{% endif %}</span></article>
+      <article class="panel"><p class="eyebrow">WORKSPACE ROLE</p><h2>{{ membership.role if membership else 'No membership' }}</h2><p>Workspace data is scoped to your membership.</p></article>
+      <article class="panel"><p class="eyebrow">DEPLOYMENTS</p><h2>Not enabled yet</h2><p>Git connections, isolated builds, resource quotas, and Dokploy provisioning will be connected after database migrations and security checks.</p></article>
+    </section>
+    <p class="form-help workspace-note">Please do not use this early-access foundation to host production or untrusted customer workloads yet.</p>
+  </main>
+</body>
+</html>
