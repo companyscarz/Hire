@@ -1,4 +1,4 @@
-const CACHE_NAME = "hire-cloud-shell-v1";
+const CACHE_NAME = "hire-cloud-shell-v2";
 const SHELL_URLS = [
   "/",
   "/static/manifest.webmanifest",
@@ -28,9 +28,21 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/health/") || url.pathname.startsWith("/api/")) return;
+
+  // Never cache authenticated pages or API/health responses: another user of
+  // the same device must not receive a previous user's workspace offline.
+  if (
+    url.pathname === "/dashboard" ||
+    url.pathname.startsWith("/dashboard/") ||
+    url.pathname === "/auth" ||
+    url.pathname.startsWith("/auth/") ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/health/")
+  ) return;
 
   if (request.mode === "navigate") {
+    // Only the public landing page is eligible for offline navigation fallback.
+    if (url.pathname !== "/") return;
     event.respondWith(
       fetch(request).then((response) => {
         if (response.ok) {
