@@ -15,6 +15,7 @@ on:
     paths:
       - "nixpacks.toml"
       - "app/hire_cloud/**"
+      - "app/migrations/**"
       - "app/tests/**"
       - "app/cloud_requirements.txt"
       - ".github/workflows/hire-cloud-tests.yml"
