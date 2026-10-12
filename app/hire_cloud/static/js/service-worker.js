@@ -1,10 +1,10 @@
 // Bump this release suffix whenever the PWA shell changes.
-const CACHE_NAME = "hire-cloud-shell-v3";
+const CACHE_NAME = "hire-cloud-shell-v4";
 const SHELL_URLS = [
   "/",
-  "/static/manifest.webmanifest?v=20261012.1",
-  "/static/css/app.css",
-  "/static/js/app.js",
+  "/static/manifest.webmanifest?v=20261012.2",
+  "/static/css/app.css?v=20261012.2",
+  "/static/js/app.js?v=20261012.2",
   "/static/icons/hire-icon.svg",
   "/static/icons/hire-icon-192.svg",
   "/static/icons/hire-icon-512.svg"
@@ -44,7 +44,6 @@ self.addEventListener("fetch", (event) => {
   ) return;
 
   if (request.mode === "navigate") {
-    // Only the public landing page is eligible for offline navigation fallback.
     if (url.pathname !== "/") return;
     event.respondWith(
       fetch(request).then((response) => {
@@ -58,7 +57,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Shell assets are refreshed as part of each versioned cache installation.
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request))
   );
