@@ -23,13 +23,9 @@ The new service lives in `app/hire_cloud/`, separate from the legacy job-board m
 
 ## Nixpacks / Dokploy deployment
 
-The root `nixpacks.toml` installs the cloud requirements and starts:
+The root `nixpacks.toml` starts `app/start_hire_cloud.sh`. That script applies checked-in Flask-Migrate revisions (`flask --app 'hire_cloud:create_app()' db upgrade --directory migrations`) before starting Gunicorn. If a migration fails, startup stops instead of serving login against missing tables such as `hc_users`.
 
-```bash
-cd app && gunicorn --bind 0.0.0.0:${PORT:-8000} 'hire_cloud:create_app()' --workers 2 --timeout 120
-```
-
-Use **port 8000** as the internal application port unless Dokploy explicitly supplies a different `PORT`. The app binds to `0.0.0.0`; route public HTTPS through Dokploy's proxy/domain configuration. Keep the build type set to **Nixpacks**, not Dockerfile.
+Use **port 8000** as the internal application port unless Dokploy explicitly supplies a different `PORT`. The app binds to `0.0.0.0`; route public HTTPS through Dokploy's proxy/domain configuration. Keep the build type set to **Nixpacks**, not Dockerfile. Keep the pilot to one app replica while startup runs migrations; before scaling, move migrations to a one-time pre-deploy/release step to avoid concurrent migration attempts.
 
 Add these values in Dokploy's server-side environment settings (never commit real values):
 
