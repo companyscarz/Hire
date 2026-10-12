@@ -56,7 +56,7 @@ gunicorn --bind 0.0.0.0:8000 'hire_cloud:create_app()'
 
 **Migration status:** an initial Flask-Migrate revision is now checked in under `app/migrations/versions/`. CI applies it to a disposable SQLite database and checks for model drift. Before production, run the same migration against a staging PostgreSQL database and review its schema effects. Do not run `db init` or generate a new migration during deployment. Automated tests use temporary SQLite; production requires PostgreSQL.
 
-Implemented account routes: `GET/POST /auth/register`, `GET/POST /auth/login`, `POST /auth/logout`, authenticated `GET /dashboard`, and tenant-scoped `GET /api/workspace/projects`. Email verification, password recovery, MFA, robust rate limiting, tenant switching, billing, live metrics, Git OAuth, provisioning, and object storage are not implemented yet.
+Implemented account routes include registration, email verification, login/logout, password recovery, resend verification, authenticated `GET /dashboard`, and tenant-scoped `GET /api/workspace/projects`. Password reset tokens are single-use and time-limited. MFA, tenant switching, billing, live metrics, Git OAuth, provisioning, and object storage are not implemented yet.
 
 Health endpoints:
 
