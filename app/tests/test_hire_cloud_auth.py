@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 import pytest
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -29,6 +30,13 @@ def client(app):
     return app.test_client()
 
 
+@pytest.fixture()
+def outbox(monkeypatch):
+    messages = []
+    monkeypatch.setattr("hire_cloud.auth.send_account_email", lambda recipient, subject, body: messages.append((recipient, subject, body)) or True)
+    return messages
+
+
 def _csrf(client, path):
     response = client.get(path)
     assert response.status_code == 200
@@ -37,7 +45,7 @@ def _csrf(client, path):
     return match.group(1).decode()
 
 
-def test_registration_creates_hashed_user_and_owner_workspace(client, app):
+def test_registration_creates_hashed_user_and_owner_workspace(client, app, outbox):
     token = _csrf(client, "/auth/register")
     response = client.post("/auth/register", data={
         "csrf_token": token,
@@ -47,7 +55,10 @@ def test_registration_creates_hashed_user_and_owner_workspace(client, app):
         "password": "a-long-test-password",
     })
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/dashboard")
+    assert response.headers["Location"].endswith("/auth/login")
+    assert len(outbox) == 1
+    assert outbox[0][0] == "dev@example.test"
+    assert "verify-email?token=" in outbox[0][2]
 
     with app.app_context():
         user = db.session.query(User).filter_by(email="dev@example.test").one()
@@ -74,6 +85,7 @@ def test_login_and_logout_require_valid_csrf(client, app):
             email="login@example.test",
             display_name="Login User",
             password_hash=generate_password_hash("a-long-test-password"),
+            email_verified_at=datetime.now(timezone.utc),
         )
         tenant = Tenant(name="Login Workspace", slug="login-workspace")
         db.session.add_all([user, tenant])
@@ -142,6 +154,7 @@ def test_login_rejects_backslash_based_external_redirect(client, app):
             email="redirect@example.test",
             display_name="Redirect User",
             password_hash=generate_password_hash("a-long-test-password"),
+            email_verified_at=datetime.now(timezone.utc),
         )
         tenant = Tenant(name="Redirect Workspace", slug="redirect-workspace")
         db.session.add_all([user, tenant])
