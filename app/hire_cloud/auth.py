@@ -3,6 +3,7 @@ import hmac
 import re
 import secrets
 from functools import wraps
+from urllib.parse import urlsplit
 
 from flask import Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import select
@@ -127,7 +128,16 @@ def login():
             session["user_id"] = user.id
             csrf_token()
             next_url = request.args.get("next", "")
-            if next_url.startswith("/") and not next_url.startswith("//"):
+            parsed_next = urlsplit(next_url)
+            # Reject scheme-relative, absolute, and backslash-based redirect tricks.
+            if (
+                next_url
+                and "\\" not in next_url
+                and not parsed_next.scheme
+                and not parsed_next.netloc
+                and parsed_next.path.startswith("/")
+                and not parsed_next.path.startswith("//")
+            ):
                 return redirect(next_url)
             return redirect(url_for("workspace"))
     return render_template("auth.html", mode="login")
