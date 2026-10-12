@@ -33,6 +33,7 @@ class User(TimestampMixin, db.Model):
     display_name = db.Column(db.String(120), nullable=False, default="")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     email_verified_at = db.Column(db.DateTime(timezone=True))
+    session_version = db.Column(db.Integer, nullable=False, default=0)
 
     memberships = db.relationship("Membership", back_populates="user", cascade="all, delete-orphan")
 
@@ -273,3 +274,23 @@ class AuditEvent(db.Model):
     target_id = db.Column(db.String(160))
     details = db.Column(db.JSON, nullable=False, default=dict)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow, index=True)
+
+
+
+class AccountToken(db.Model):
+    """Single-use, hashed email verification and password reset tokens."""
+    __tablename__ = "hc_account_tokens"
+
+    id = db.Column(db.String(36), primary_key=True, default=_id)
+    user_id = db.Column(db.String(36), db.ForeignKey("hc_users.id", ondelete="CASCADE"), nullable=False, index=True)
+    purpose = db.Column(db.String(24), nullable=False)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+    used_at = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        CheckConstraint("purpose IN ('verify_email', 'reset_password')", name="ck_hc_account_token_purpose"),
+    )
+
+    user = db.relationship("User")
