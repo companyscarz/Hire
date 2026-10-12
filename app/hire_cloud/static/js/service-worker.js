@@ -1,10 +1,13 @@
-const CACHE_NAME = "hire-cloud-shell-v2";
+// Bump this release suffix whenever the PWA shell changes.
+const CACHE_NAME = "hire-cloud-shell-v3";
 const SHELL_URLS = [
   "/",
-  "/static/manifest.webmanifest",
+  "/static/manifest.webmanifest?v=20261012.1",
   "/static/css/app.css",
   "/static/js/app.js",
-  "/static/icons/hire-icon.svg"
+  "/static/icons/hire-icon.svg",
+  "/static/icons/hire-icon-192.svg",
+  "/static/icons/hire-icon-512.svg"
 ];
 
 self.addEventListener("install", (event) => {
@@ -55,6 +58,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Shell assets are refreshed as part of each versioned cache installation.
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request))
   );
