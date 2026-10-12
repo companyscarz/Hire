@@ -6,6 +6,7 @@ on:
     paths:
       - "nixpacks.toml"
       - "app/hire_cloud/**"
+      - "app/migrations/**"
       - "app/tests/**"
       - "app/cloud_requirements.txt"
       - ".github/workflows/hire-cloud-tests.yml"
@@ -34,15 +35,9 @@ jobs:
           cache-dependency-path: app/cloud_requirements.txt
       - name: Install Hire Cloud dependencies
         run: python -m pip install -r cloud_requirements.txt
-      - name: Generate initial migration preview using disposable SQLite
-        run: |
-          flask --app 'hire_cloud:create_app()' db init --directory /tmp/hire-cloud-migrations
-          flask --app 'hire_cloud:create_app()' db migrate --directory /tmp/hire-cloud-migrations -m "initial hire cloud schema"
-          echo "=== MIGRATION REVISION ==="
-          cat /tmp/hire-cloud-migrations/versions/*.py
-          echo "=== MIGRATION ENVIRONMENT ==="
-          cat /tmp/hire-cloud-migrations/env.py
-          echo "=== MIGRATION TEMPLATE ==="
-          cat /tmp/hire-cloud-migrations/script.py.mako
+      - name: Apply checked-in migration against disposable SQLite
+        run: flask --app 'hire_cloud:create_app()' db upgrade --directory migrations
+      - name: Check models match the checked-in migration
+        run: flask --app 'hire_cloud:create_app()' db check --directory migrations
       - name: Run all Hire Cloud tests
         run: python -m pytest -q tests/
