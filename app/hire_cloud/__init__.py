@@ -54,6 +54,11 @@ def create_app(test_config=None):
 
     # Import model definitions so Flask-Migrate can discover the metadata.
     from . import models  # noqa: F401
+    from .auth import auth, install_auth, register_workspace_routes
+
+    install_auth(app)
+    app.register_blueprint(auth)
+    register_workspace_routes(app)
 
     @app.get("/")
     def index():
