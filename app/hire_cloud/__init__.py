@@ -35,6 +35,11 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
+    database_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    # SQLAlchemy defaults postgresql:// to psycopg2; this service uses psycopg 3.
+    if database_uri.startswith("postgresql://"):
+        app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+psycopg://" + database_uri[len("postgresql://"):]
+
     if app.config["APP_ENV"] == "production":
         if not os.getenv("SECRET_KEY") and not (test_config and test_config.get("SECRET_KEY")):
             raise RuntimeError("SECRET_KEY must be configured in production")
