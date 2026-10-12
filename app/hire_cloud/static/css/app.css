@@ -50,3 +50,6 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#74889e;font-si
 .workspace-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.workspace-grid .panel h2{margin:10px 0}.workspace-grid .panel p:not(.eyebrow){color:var(--muted);font-size:12px}
 .workspace-note{margin-top:22px}
 @media(max-width:720px){.workspace-grid{grid-template-columns:1fr}.workspace-topbar{align-items:flex-start}.account-area{align-items:flex-end;flex-direction:column;gap:7px}.auth-page{padding:14px}.auth-card{padding:24px 20px}}
+
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+@media(max-width:640px){.top-actions{gap:6px}.top-actions .button{padding:8px 9px;font-size:11px}}
