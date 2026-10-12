@@ -57,7 +57,7 @@ jobs:
       - name: Install Hire Cloud dependencies
         run: python -m pip install -r cloud_requirements.txt
       - name: Validate Nixpacks deployment configuration
-        run: python -c "import tomllib; p=tomllib.load(open('../nixpacks.toml', 'rb')); assert p['providers'] == ['python']; assert 'gunicorn' in p['start']['cmd']; print('Nixpacks configuration OK')"
+        run: python -c "import pathlib, tomllib; p=tomllib.load(open('../nixpacks.toml', 'rb')); s=pathlib.Path('start_hire_cloud.sh').read_text(); assert p['providers'] == ['python']; assert 'start_hire_cloud.sh' in p['start']['cmd']; assert 'db upgrade --directory migrations' in s; assert 'exec gunicorn' in s; print('Nixpacks migration-first startup configuration OK')"
       - name: Apply checked-in migration against disposable PostgreSQL
         run: flask --app 'hire_cloud:create_app()' db upgrade --directory migrations
       - name: Check models match the checked-in migration
