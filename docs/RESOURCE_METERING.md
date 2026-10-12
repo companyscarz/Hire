@@ -25,13 +25,13 @@ Create/invite a Dokploy user when the product explicitly offers direct access to
 - provision and revoke access through a controlled, audited server-side workflow;
 - confirm the installed Dokploy version's invitation and permission semantics before automating provisioning.
 
-The current client intentionally does not create, update, or remove Dokploy users. User creation is privileged and should be implemented only alongside a tenant-to-Dokploy-project mapping and tests proving least-privilege access.
+The current client intentionally does not create, update, or remove Dokploy users. It now includes a pure `customer_permissions()` policy builder that requires at least one explicit project ID and defaults all create/delete, host/Docker, Traefik, API, SSH-key, server, and Git-provider privileges to false. The helper is not wired to an endpoint and cannot grant access on its own. Its IDs must be resolved from trusted Hire Cloud database mappings, never accepted directly from customer input. Actual invitations/provisioning should follow only after a tenant-to-Dokploy-project mapping, audited workflow, installed-version verification, and regression tests are in place.
 
 ## Dokploy API client
 
 `hire_cloud.dokploy.DokployClient` reads `DOKPLOY_BASE_URL` and `DOKPLOY_API_KEY` from the server environment. It currently supports only the documented server-metrics and user-list GET endpoints. It:
 - requires HTTPS except for loopback development URLs;
-- rejects embedded credentials/query strings/fragments in the base URL;
+- rejects embedded credentials/query strings/fragments and path prefixes in the base URL;
 - uses a bounded timeout and response size;
 - allowlists endpoint paths;
 - sanitizes API/network errors so response bodies and secrets are not echoed.
