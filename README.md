@@ -17,7 +17,30 @@ The new service lives in `app/hire_cloud/`, separate from the legacy job-board m
 - PostgreSQL is the intended production database.
 - SQLAlchemy models and Flask-Migrate are used for the new domain.
 - `app/cloud_requirements.txt` contains a minimal dependency set for the new service.
-- Tests: `app/tests/test_hire_cloud_foundation.py`
+- Authentication uses Werkzeug password hashing, signed Flask sessions, CSRF tokens for unsafe requests, and tenant-scoped project queries.
+- Nixpacks configuration: repository-root `nixpacks.toml`; it installs `app/cloud_requirements.txt` and starts Hire Cloud.
+- Tests: `app/tests/`
+
+## Nixpacks / Dokploy deployment
+
+The root `nixpacks.toml` installs the cloud requirements and starts:
+
+```bash
+cd app && gunicorn --bind 0.0.0.0:${PORT:-8000} 'hire_cloud:create_app()' --workers 2 --timeout 120
+```
+
+Use **port 8000** as the internal application port unless Dokploy explicitly supplies a different `PORT`. The app binds to `0.0.0.0`; route public HTTPS through Dokploy's proxy/domain configuration. Keep the build type set to **Nixpacks**, not Dockerfile.
+
+Add these values in Dokploy's server-side environment settings (never commit real values):
+
+- `APP_ENV=production`
+- `SECRET_KEY` — a long random secret, at least 32 random bytes
+- `DATABASE_URL` — private PostgreSQL connection string, preferably `postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME`
+- `PORT=8000` only if Dokploy does not already configure the internal port
+
+The PostgreSQL user should be restricted to this application and must not be a superuser. Do not expose the database publicly unless properly protected.
+
+## Local development
 
 Run locally from the `app` directory:
 
@@ -30,10 +53,12 @@ cp .env.example .env
 flask --app 'hire_cloud:create_app()' db init
 flask --app 'hire_cloud:create_app()' db migrate -m "initial schema"
 flask --app 'hire_cloud:create_app()' db upgrade
-gunicorn 'hire_cloud:create_app()'
+gunicorn --bind 0.0.0.0:8000 'hire_cloud:create_app()'
 ```
 
-The migration commands above are the expected first local setup. Review generated migrations before applying them to any non-disposable database. Automated tests use a temporary SQLite database for fast model/health checks; production is configured to require PostgreSQL.
+**Migration status:** the initial Flask-Migrate revision has not yet been generated and reviewed in this branch. Do not run these migration commands against production until a reviewed revision is checked in. Do not run `db init` again once a migrations directory exists. Automated tests use a temporary SQLite database; production requires PostgreSQL.
+
+Implemented account routes: `GET/POST /auth/register`, `GET/POST /auth/login`, `POST /auth/logout`, authenticated `GET /dashboard`, and tenant-scoped `GET /api/workspace/projects`. Email verification, password recovery, MFA, robust rate limiting, tenant switching, billing, live metrics, Git OAuth, provisioning, and object storage are not implemented yet.
 
 Health endpoints:
 
