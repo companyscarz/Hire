@@ -2,7 +2,7 @@
 {% block title %}Reports · ScarZ POS{% endblock %}
 {% block content %}
 <section class="page-heading">
-  <div><div class="eyebrow">BUSINESS PERFORMANCE</div><h1>Reports</h1><p class="muted">Review sales, cost of goods, expenses and estimated profit for a selected period.</p></div>
+  <div><div class="eyebrow">BUSINESS PERFORMANCE</div><h1>Reports</h1><p class="muted">Review completed sales, cost of goods, expenses and estimated profit. Voided transactions remain in history but are excluded from these totals.</p></div>
   <a class="button secondary" href="{{ url_for('views.reports_csv', start=start_date, end=end_date) }}">Export this report ↓</a>
 </section>
 <section class="panel report-filter">
