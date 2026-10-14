@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from .extensions import db
-from .models import Expense, Product, Sale, SaleItem
+from .models import Expense, Product, Sale, SaleItem, StockMovement
 
 bp = Blueprint('views', __name__)
 
@@ -65,6 +65,17 @@ def products():
                 raise ValueError('Check the product name and stock quantities.')
             product = Product(business_id=current_user.business_id, name=name, sku=sku, category=category[:80], cost_price=cost, selling_price=price, quantity=quantity, low_stock_at=low_stock)
             db.session.add(product)
+            db.session.flush()
+            if quantity > 0:
+                db.session.add(StockMovement(
+                    business_id=current_user.business_id,
+                    product_id=product.id,
+                    user_id=current_user.id,
+                    quantity_change=quantity,
+                    quantity_before=0,
+                    quantity_after=quantity,
+                    reason='Opening stock',
+                ))
             db.session.commit()
             flash('Product saved.', 'success')
             return redirect(url_for('views.products'))
@@ -111,8 +122,19 @@ def checkout():
             db.session.add(sale)
             db.session.flush()
             for product, qty in lines:
+                before = product.quantity
                 db.session.add(SaleItem(sale_id=sale.id, product_id=product.id, product_name=product.name, quantity=qty, unit_price=product.selling_price, unit_cost=product.cost_price))
                 product.quantity -= qty
+                db.session.add(StockMovement(
+                    business_id=current_user.business_id,
+                    product_id=product.id,
+                    user_id=current_user.id,
+                    sale_id=sale.id,
+                    quantity_change=-qty,
+                    quantity_before=before,
+                    quantity_after=product.quantity,
+                    reason=f'Sale #{sale.id}',
+                ))
             db.session.commit()
             flash(f'Sale #{sale.id} completed.', 'success')
             return redirect(url_for('views.receipt', sale_id=sale.id))
@@ -120,6 +142,54 @@ def checkout():
             db.session.rollback()
             flash(str(exc) or 'Please check quantities and try again.', 'error')
     return render_template('checkout.html', products=available)
+
+
+@bp.route('/stock', methods=['GET', 'POST'])
+@login_required
+def stock_history():
+    if request.method == 'POST':
+        require_active_subscription()
+        try:
+            product_id = int(request.form.get('product_id', ''))
+            change = int(request.form.get('quantity_change', '0'))
+            reason = request.form.get('reason', '').strip()
+            if change == 0:
+                raise ValueError('Enter a stock change other than zero.')
+            if not reason or len(reason) > 200:
+                raise ValueError('Enter a reason of up to 200 characters.')
+            product = Product.query.filter_by(
+                id=product_id, business_id=current_user.business_id
+            ).with_for_update().first()
+            if product is None:
+                raise ValueError('Choose a product from your inventory.')
+            before = product.quantity
+            after = before + change
+            if after < 0:
+                raise ValueError(f'Cannot remove {-change} units; only {before} are in stock.')
+            product.quantity = after
+            db.session.add(StockMovement(
+                business_id=current_user.business_id,
+                product_id=product.id,
+                user_id=current_user.id,
+                quantity_change=change,
+                quantity_before=before,
+                quantity_after=after,
+                reason=reason,
+            ))
+            db.session.commit()
+            flash('Stock adjustment saved and recorded.', 'success')
+            return redirect(url_for('views.stock_history'))
+        except (ValueError, InvalidOperation) as exc:
+            db.session.rollback()
+            flash(str(exc) or 'Check the stock adjustment details.', 'error')
+
+    products = Product.query.filter_by(
+        business_id=current_user.business_id
+    ).order_by(Product.name).all()
+    movements = StockMovement.query.filter_by(
+        business_id=current_user.business_id
+    ).order_by(StockMovement.created_at.desc(), StockMovement.id.desc()).limit(200).all()
+    return render_template('stock.html', products=products, movements=movements)
 
 
 @bp.get('/sales')
