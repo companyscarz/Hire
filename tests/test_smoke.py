@@ -258,3 +258,39 @@ def test_stock_adjustment_cannot_change_another_business_product(client, app):
     with app.app_context():
         assert db.session.get(Product, other_product_id).quantity == 7
 
+def test_date_filtered_reports_include_revenue_cost_profit_and_expenses(client):
+    register(client)
+    client.post('/products', data={
+        'name': 'Tea', 'sku': 'REPORT-TEA', 'category': 'Groceries',
+        'cost_price': '2.00', 'selling_price': '3.50', 'quantity': '10',
+        'low_stock_at': '2'
+    }, follow_redirects=True)
+    with client.application.app_context():
+        product = Product.query.filter_by(sku='REPORT-TEA').one()
+        product_id = product.id
+    client.post('/checkout', data={f'qty_{product_id}': '2', 'payment_method': 'cash'}, follow_redirects=True)
+    client.post('/expenses', data={'description': 'Packing materials', 'amount': '1.00'}, follow_redirects=True)
+
+    response = client.get('/reports')
+    assert response.status_code == 200
+    assert b'Reports' in response.data
+    assert b'7.00' in response.data
+    assert b'4.00' in response.data
+    assert b'3.00' in response.data
+    assert b'1.00' in response.data
+    assert b'2.00' in response.data
+
+    csv_response = client.get('/reports.csv')
+    assert csv_response.status_code == 200
+    assert b'REPORT-TEA' not in csv_response.data
+    assert b'Packing materials' in csv_response.data
+    assert b'Estimated gross profit' in csv_response.data
+
+
+def test_reports_reject_invalid_date_range(client):
+    register(client)
+    response = client.get('/reports?start=2026-12-31&end=2026-01-01')
+    assert response.status_code == 302
+    response = client.get('/reports.csv?start=not-a-date&end=2026-01-01')
+    assert response.status_code == 400
+
