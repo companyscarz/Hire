@@ -339,7 +339,7 @@ def test_void_sale_restores_inventory_once_and_is_excluded_from_reports(client, 
     assert b'0 completed transactions' in report.data
     csv_response = client.get('/reports.csv')
     assert csv_response.status_code == 200
-    assert f',{sale_id},'.encode() not in csv_response.data
+    assert not any(line.startswith(f'{sale_id},') for line in csv_response.data.decode('utf-8-sig').splitlines())
 
 
 def test_void_sale_requires_reason_and_cannot_cross_business(client, app):
