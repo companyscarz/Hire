@@ -48,6 +48,11 @@ def test_product_and_checkout_reduce_stock(client, app):
     assert b'Sale complete' in response.data or b'SALE COMPLETE' in response.data
     with app.app_context():
         assert db.session.get(Product, product_id).quantity == 8
+        from scarz_pos.models import StockMovement
+        movements = StockMovement.query.filter_by(product_id=product_id).order_by(StockMovement.id).all()
+        assert [(m.quantity_change, m.quantity_before, m.quantity_after) for m in movements] == [
+            (10, 0, 10), (-2, 10, 8)
+        ]
 
 def test_tenant_cannot_read_other_business_receipt(client, app):
     register(client, 'first@example.com', 'First Shop')
@@ -195,4 +200,59 @@ def test_successful_subscription_webhook_is_idempotent(client, app, monkeypatch)
     with app.app_context():
         business = db.session.get(Business, business_id)
         assert business.subscription_ends_at == first_expiry
+
+def test_stock_adjustment_records_ledger_and_prevents_negative_stock(client, app):
+    register(client)
+    client.post('/products', data={
+        'name': 'Coffee', 'sku': 'COF-1', 'category': 'Drinks',
+        'cost_price': '1.00', 'selling_price': '2.00', 'quantity': '4',
+        'low_stock_at': '1'
+    }, follow_redirects=True)
+    with app.app_context():
+        product = Product.query.filter_by(sku='COF-1').one()
+        product_id = product.id
+
+    added = client.post('/stock', data={
+        'product_id': str(product_id), 'quantity_change': '6',
+        'reason': 'Supplier delivery'
+    }, follow_redirects=True)
+    assert added.status_code == 200
+    with app.app_context():
+        from scarz_pos.models import StockMovement
+        product = db.session.get(Product, product_id)
+        assert product.quantity == 10
+        movement = StockMovement.query.filter_by(product_id=product_id).order_by(StockMovement.id.desc()).first()
+        assert (movement.quantity_change, movement.quantity_before, movement.quantity_after) == (6, 4, 10)
+        assert movement.reason == 'Supplier delivery'
+
+    rejected = client.post('/stock', data={
+        'product_id': str(product_id), 'quantity_change': '-11',
+        'reason': 'Incorrect stock count'
+    }, follow_redirects=True)
+    assert rejected.status_code == 200
+    with app.app_context():
+        assert db.session.get(Product, product_id).quantity == 10
+        assert StockMovement.query.filter_by(product_id=product_id).count() == 2
+
+
+def test_stock_adjustment_cannot_change_another_business_product(client, app):
+    register(client, 'owner-one@example.com', 'Owner One')
+    with app.app_context():
+        other_business = Business(name='Owner Two')
+        other_product = Product(
+            business=other_business, name='Private item', sku='PRIVATE-1',
+            category='General', cost_price='1.00', selling_price='2.00',
+            quantity=7, low_stock_at=2
+        )
+        db.session.add(other_product)
+        db.session.commit()
+        other_product_id = other_product.id
+
+    response = client.post('/stock', data={
+        'product_id': str(other_product_id), 'quantity_change': '-3',
+        'reason': 'Attempted cross-tenant change'
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    with app.app_context():
+        assert db.session.get(Product, other_product_id).quantity == 7
 
