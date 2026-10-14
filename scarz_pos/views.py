@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from .extensions import db
-from .models import Expense, Product, Sale, SaleItem, StockMovement
+from .models import Expense, Product, Sale, SaleItem, SaleVoid, StockMovement
 
 bp = Blueprint('views', __name__)
 
@@ -39,12 +39,13 @@ def home():
 def dashboard():
     bid = current_user.business_id
     today = datetime.now(timezone.utc).date()
-    sales = db.session.query(func.coalesce(func.sum(Sale.total), 0)).filter(Sale.business_id == bid, func.date(Sale.created_at) == today).scalar()
-    count = Sale.query.filter_by(business_id=bid).count()
+    valid_sale = ~Sale.id.in_(db.session.query(SaleVoid.sale_id))
+    sales = db.session.query(func.coalesce(func.sum(Sale.total), 0)).filter(Sale.business_id == bid, func.date(Sale.created_at) == today, valid_sale).scalar()
+    count = Sale.query.filter(Sale.business_id == bid, valid_sale).count()
     products = Product.query.filter_by(business_id=bid, active=True).order_by(Product.name).all()
     low_stock = [p for p in products if p.quantity <= p.low_stock_at]
     expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(Expense.business_id == bid, func.date(Expense.created_at) == today).scalar()
-    recent = Sale.query.filter_by(business_id=bid).order_by(Sale.created_at.desc()).limit(8).all()
+    recent = Sale.query.filter(Sale.business_id == bid, valid_sale).order_by(Sale.created_at.desc()).limit(8).all()
     return render_template('dashboard.html', sales=sales, sale_count=count, products=products, low_stock=low_stock, expenses=expenses, recent=recent)
 
 
@@ -199,6 +200,65 @@ def sales():
     return render_template('sales.html', sales=items)
 
 
+@bp.post('/sales/<int:sale_id>/void')
+@login_required
+def void_sale(sale_id):
+    """Void a completed sale once, restore its inventory, and retain an audit trail."""
+    reason = request.form.get('reason', '').strip()
+    if not reason or len(reason) > 240:
+        flash('Enter a reason for voiding this sale (up to 240 characters).', 'error')
+        return redirect(url_for('views.receipt', sale_id=sale_id))
+
+    try:
+        sale = Sale.query.filter_by(
+            id=sale_id, business_id=current_user.business_id
+        ).with_for_update().first_or_404()
+        existing = SaleVoid.query.filter_by(sale_id=sale.id).first()
+        if existing is not None:
+            flash(f'Sale #{sale.id} has already been voided; stock was not restored again.', 'error')
+            return redirect(url_for('views.receipt', sale_id=sale.id))
+
+        db.session.add(SaleVoid(
+            business_id=current_user.business_id,
+            sale_id=sale.id,
+            user_id=current_user.id,
+            reason=reason,
+        ))
+        db.session.flush()
+
+        for item in sale.items:
+            product = Product.query.filter_by(
+                id=item.product_id, business_id=current_user.business_id
+            ).with_for_update().first()
+            if product is None:
+                raise ValueError(
+                    f'Cannot safely restore stock for sale #{sale.id}: '
+                    f'product record for {item.product_name} is missing.'
+                )
+            before = product.quantity
+            after = before + item.quantity
+            product.quantity = after
+            db.session.add(StockMovement(
+                business_id=current_user.business_id,
+                product_id=product.id,
+                user_id=current_user.id,
+                sale_id=sale.id,
+                quantity_change=item.quantity,
+                quantity_before=before,
+                quantity_after=after,
+                reason=f'Void sale #{sale.id}: {reason}'[:200],
+            ))
+        db.session.commit()
+        flash(f'Sale #{sale.id} voided. Inventory restored and audit record saved.', 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash('This sale has already been voided; no additional stock restoration was applied.', 'error')
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), 'error')
+    return redirect(url_for('views.receipt', sale_id=sale_id))
+
+
 @bp.get('/receipt/<int:sale_id>')
 @login_required
 def receipt(sale_id):
@@ -254,6 +314,7 @@ def report_data(start_at, end_at):
         func.coalesce(func.sum(Sale.total), 0),
     ).filter(
         Sale.business_id == bid,
+        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
         Sale.created_at >= start_at,
         Sale.created_at < end_at,
     ).one()
@@ -261,6 +322,7 @@ def report_data(start_at, end_at):
         func.coalesce(func.sum(SaleItem.quantity * SaleItem.unit_cost), 0)
     ).join(Sale, Sale.id == SaleItem.sale_id).filter(
         Sale.business_id == bid,
+        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
         Sale.created_at >= start_at,
         Sale.created_at < end_at,
     ).scalar()
@@ -277,6 +339,7 @@ def report_data(start_at, end_at):
         func.coalesce(func.sum(Sale.total), 0),
     ).filter(
         Sale.business_id == bid,
+        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
         Sale.created_at >= start_at,
         Sale.created_at < end_at,
     ).group_by(Sale.payment_method).order_by(Sale.payment_method).all()
@@ -286,6 +349,7 @@ def report_data(start_at, end_at):
         func.coalesce(func.sum(Sale.total), 0),
     ).filter(
         Sale.business_id == bid,
+        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
         Sale.created_at >= start_at,
         Sale.created_at < end_at,
     ).group_by(func.date(Sale.created_at)).order_by(func.date(Sale.created_at)).all()
@@ -340,6 +404,7 @@ def reports_csv():
     writer.writerow(['Sale ID', 'Date (UTC)', 'Payment method', 'Total', 'Items', 'Cost of goods', 'Estimated gross profit'])
     items = Sale.query.filter(
         Sale.business_id == current_user.business_id,
+        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
         Sale.created_at >= start_at,
         Sale.created_at < end_at,
     ).order_by(Sale.created_at.desc()).all()
