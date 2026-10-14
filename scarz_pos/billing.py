@@ -5,12 +5,10 @@ import re
 import secrets
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
-from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from . import csrf
 from .extensions import db
@@ -133,18 +131,32 @@ def subscription():
                 reference=reference,
             )
             # Initiation is not proof of payment. Only the signed webhook activates the plan.
-            payment.status = "processing"
-            payment.raw_payload = {
-                "initiation_reference": str(getattr(result, "reference", reference)),
-                "initiation_status": str(getattr(result, "status", "processing")),
-            }
-            db.session.commit()
+            # A webhook can arrive before collect_payment returns. Reload under
+            # a row lock and never overwrite a confirmed success with "processing".
+            current_payment = db.session.execute(
+                select(SubscriptionPayment)
+                .where(SubscriptionPayment.id == payment.id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            ).scalar_one_or_none()
+            if current_payment and current_payment.status != "successful":
+                current_payment.status = "processing"
+                current_payment.raw_payload = {
+                    "initiation_reference": str(getattr(result, "reference", reference)),
+                    "initiation_status": str(getattr(result, "status", "processing")),
+                }
+                db.session.commit()
             flash("Payment request sent to your phone. Enter your Mobile Money PIN, then wait for confirmation.", "info")
         except Exception:
             db.session.rollback()
             current_app.logger.exception("Nylon Pay initiation failed for reference %s", reference)
             # Keep the attempt record for reconciliation; do not grant subscription access.
-            current_payment = db.session.get(SubscriptionPayment, payment.id)
+            current_payment = db.session.execute(
+                select(SubscriptionPayment)
+                .where(SubscriptionPayment.id == payment.id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            ).scalar_one_or_none()
             if current_payment and current_payment.status != "successful":
                 current_payment.status = "initiation_error"
                 db.session.commit()
