@@ -5,7 +5,8 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 ## MVP foundation included
 - Business-owner registration, login/logout, password hashing, CSRF protection and secure cookie settings in production.
 - Tenant-scoped products, stock quantities, sales, sale items, expenses and dashboard totals.
-- Auditable stock ledger for opening stock, completed-sale deductions, and manual additions/removals with before/after quantities and reasons; manual adjustments cannot create negative stock or change another business's inventory.
+- Auditable stock ledger for opening stock, completed-sale deductions, manual adjustments, and sale-void inventory restoration with before/after quantities and reasons; manual adjustments cannot create negative stock or change another business's inventory.
+- Safe sale voiding: original transaction retained, mandatory reason and user/time audit record, one void per sale, stock restored transactionally once, and voided sales excluded from dashboard and date-filtered report/CSV totals. Voiding does not automatically refund money.
 - Checkout runs in a database transaction, locks selected product rows where supported, and rejects invalid quantities or insufficient stock.
 - PostgreSQL via `DATABASE_URL`, Flask application factory, SQLAlchemy, Flask-Migrate and Gunicorn/Nixpacks entrypoint.
 - Trial/subscription fields and server-side expiry checks as the foundation for paid plans.
@@ -17,7 +18,7 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 ## Important MVP limitations
 - Subscription checkout uses the Nylon Pay SDK pattern already used in Digital Read/Qavzuno: pending payment record, Mobile Money collection, signed webhook verification, reference matching, amount/currency checks, and idempotent subscription activation. POS sales' local payment labels are not electronic payment processing.
 - The first database bootstrap uses `db.create_all()` for a fresh MVP database. It does not alter existing tables. Before a public production launch, check in an initial Flask-Migrate revision and use migrations for all schema changes.
-- Email verification, password recovery, staff roles, sale returns/refunds, offline sale synchronization, rate limiting and a complete security audit remain to be done. Date-filtered business reporting is included, but it is not a replacement for audited accounting or tax reports.
+- Email verification, password recovery, staff roles, sale returns/refunds (voiding is not a refund), offline sale synchronization, rate limiting and a complete security audit remain to be done. Date-filtered business reporting is included, but it is not a replacement for audited accounting or tax reports.
 - Trial expiry is enforced for inventory creation, checkout and expense creation. Subscription payment initiation and webhook handling are implemented on this branch, but live provider verification and production tests are still pending. Configure plan prices before offering checkout. Configure Nylon Pay's webhook URL as `https://YOUR-DOMAIN/webhooks/nylonpay/subscriptions`.
 
 ## Local setup
