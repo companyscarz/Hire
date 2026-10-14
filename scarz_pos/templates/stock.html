@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Stock history · ScarZ POS{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">INVENTORY CONTROL</div><h1>Stock history</h1><p class="muted">Every recorded stock addition and removal is traceable, including sales and manual adjustments.</p></div>
+  <a class="button secondary" href="{{ url_for('views.products') }}">Back to products</a>
+</section>
+<section class="content-grid inventory-grid">
+  <div class="panel">
+    <h2>Adjust stock</h2>
+    {% if products %}
+    <form method="post" class="form-stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Product
+        <select name="product_id" required>
+          <option value="">Choose a product</option>
+          {% for product in products %}
+          <option value="{{ product.id }}">{{ product.name }} — {{ product.quantity }} in stock</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Quantity change
+        <input type="number" name="quantity_change" step="1" required placeholder="e.g. 12 to add, -3 to remove">
+        <small class="muted">Use a positive number to add stock or a negative number to remove stock.</small>
+      </label>
+      <label>Reason
+        <input name="reason" required maxlength="200" placeholder="e.g. New delivery, damaged goods, stock count">
+      </label>
+      <button class="button primary" type="submit">Save adjustment</button>
+    </form>
+    {% else %}
+    <div class="empty"><strong>No products yet</strong><p>Add products before recording stock.</p><a href="{{ url_for('views.products') }}">Add products →</a></div>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <div class="panel-heading"><h2>Current stock</h2><span class="pill">{{ products|length }} products</span></div>
+    {% if products %}
+    <div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Alert at</th></tr></thead><tbody>
+    {% for product in products %}<tr><td><strong>{{ product.name }}</strong><small>{{ product.sku or product.category }}</small></td><td>{% if product.quantity <= product.low_stock_at %}<span class="stock-count warning">{{ product.quantity }}</span>{% else %}{{ product.quantity }}{% endif %}</td><td>{{ product.low_stock_at }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% endif %}
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>Movement ledger</h2><span class="pill">Latest {{ movements|length }}</span></div>
+  {% if movements %}
+  <div class="table-wrap"><table><thead><tr><th>Date (UTC)</th><th>Product</th><th>Change</th><th>Before</th><th>After</th><th>Reason</th><th>Recorded by</th></tr></thead><tbody>
+  {% for movement in movements %}
+  <tr>
+    <td>{{ movement.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+    <td><strong>{{ movement.product.name }}</strong></td>
+    <td>{% if movement.quantity_change > 0 %}<span class="stock-count">+{{ movement.quantity_change }}</span>{% else %}<span class="stock-count warning">{{ movement.quantity_change }}</span>{% endif %}</td>
+    <td>{{ movement.quantity_before }}</td><td>{{ movement.quantity_after }}</td><td>{{ movement.reason }}</td><td>{{ movement.user.full_name if movement.user else 'System' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty"><strong>No stock movements yet</strong><p>Opening stock, completed sales, and manual adjustments will appear here.</p></div>{% endif %}
+</section>
+{% endblock %}
