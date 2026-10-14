@@ -63,3 +63,25 @@ def test_tenant_cannot_read_other_business_receipt(client, app):
 def test_health(client):
     assert client.get('/health/live').status_code == 200
     assert client.get('/health/ready').status_code == 200
+
+
+def test_subscription_page_shows_server_configured_plan_state(client):
+    register(client)
+    response = client.get('/subscription')
+    assert response.status_code == 200
+    assert b'Subscription' in response.data
+    assert b'not configured' in response.data.lower()
+
+
+def test_unconfigured_subscription_plan_does_not_start_payment(client, app, monkeypatch):
+    register(client)
+    monkeypatch.delenv('SCARZ_POS_PLAN_MONTHLY_UGX', raising=False)
+    response = client.post('/subscription', data={
+        'plan': 'monthly',
+        'phone_number': '0771234567',
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'not configured' in response.data.lower()
+    from scarz_pos.models import SubscriptionPayment
+    with app.app_context():
+        assert SubscriptionPayment.query.count() == 0

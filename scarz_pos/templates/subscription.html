@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Subscription · ScarZ POS{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">BUSINESS PLAN</div><h1>Keep your business moving.</h1><p class="muted">Choose a plan and pay securely with Mobile Money. Your plan changes only after Nylon Pay confirms the payment.</p></div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>Current subscription</h2><span class="pill">{{ 'Active' if business.subscription_active else 'Expired' }}</span></div>
+  <div class="stats">
+    <article class="stat"><span>Current plan</span><strong>{{ business.plan|title }}</strong><small>{% if business.plan == 'trial' %}Free trial{% else %}Paid plan{% endif %}</small></article>
+    <article class="stat"><span>Trial ends</span><strong>{{ business.trial_ends_at.strftime('%d %b %Y') }}</strong><small>Trial start date is not changed by payment</small></article>
+    <article class="stat"><span>Paid through</span><strong>{{ business.subscription_ends_at.strftime('%d %b %Y') if business.subscription_ends_at else '—' }}</strong><small>Extension starts after any current trial or paid period</small></article>
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>Available plans</h2><span class="muted">Prices are controlled by ScarZ POS</span></div>
+  <form method="post" class="form-stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Mobile Money phone number<input name="phone_number" required inputmode="tel" autocomplete="tel" placeholder="0771 234 567"></label>
+    <div class="stats plan-grid">
+    {% for plan in plans %}
+      <article class="stat plan-card">
+        <span>{{ plan.label }}</span>
+        <strong>{% if plan.configured %}UGX {{ '{:,.0f}'.format(plan.amount) }}{% else %}Not configured{% endif %}</strong>
+        <small>{{ plan.days }} days</small>
+        <button class="button {{ 'primary' if plan.configured else 'secondary' }}" type="submit" name="plan" value="{{ plan.key }}" {% if not plan.configured %}disabled{% endif %}>{{ 'Pay with Mobile Money' if plan.configured else 'Unavailable' }}</button>
+      </article>
+    {% endfor %}
+    </div>
+  </form>
+  {% if not plans|selectattr('configured')|list %}<p class="muted">The owner must set the plan prices in the hosting environment before payments can be accepted.</p>{% endif %}
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>Recent subscription payments</h2></div>
+  {% if recent_payments %}
+  <div class="table-wrap"><table><thead><tr><th>Date</th><th>Reference</th><th>Plan</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+  {% for payment in recent_payments %}<tr><td>{{ payment.created_at.strftime('%d %b %Y, %H:%M') }}</td><td>{{ payment.merchant_reference }}</td><td>{{ payment.plan_key|title }}</td><td>UGX {{ '{:,.0f}'.format(payment.amount|float) }}</td><td>{{ payment.status|replace('_',' ')|title }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="muted">No subscription payments yet.</p>{% endif %}
+</section>
+{% endblock %}

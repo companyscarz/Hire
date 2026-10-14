@@ -94,6 +94,24 @@ class Expense(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)
 
 
+class SubscriptionPayment(db.Model):
+    """One auditable Nylon Pay attempt to buy/renew a business subscription."""
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('business.id', ondelete='CASCADE'), nullable=False, index=True)
+    merchant_reference = db.Column(db.String(32), nullable=False, unique=True, index=True)
+    provider_transaction_id = db.Column(db.String(120))
+    plan_key = db.Column(db.String(24), nullable=False)
+    duration_days = db.Column(db.Integer, nullable=False)
+    amount = db.Column(db.Numeric(14, 2), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='UGX')
+    phone_number = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(24), nullable=False, default='pending', index=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    paid_at = db.Column(db.DateTime(timezone=True))
+    raw_payload = db.Column(db.JSON)
+    business = db.relationship('Business', backref=db.backref('subscription_payments', lazy=True))
+
+
 @login_manager.user_loader
 def load_user(user_id):
     try:
