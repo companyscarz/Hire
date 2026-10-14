@@ -1,4 +1,0 @@
-Hire Cloud database migrations.
-
-Review every generated revision before applying it to a non-disposable database.
-Run Flask-Migrate commands from the app directory.

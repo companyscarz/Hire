@@ -1,10 +1,8 @@
-# Hire Cloud is the new Flask service under app/hire_cloud.
-# Keep the legacy application out of this service's runtime entrypoint.
 providers = ["python"]
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.12"
 
 [start]
-# The entrypoint applies checked-in migrations before Gunicorn accepts requests.
-cmd = "bash app/start_hire_cloud.sh"
+# Bootstrap empty MVP database; later schema changes must use checked-in migrations.
+cmd = "flask --app 'scarz_pos:create_app()' init-db && gunicorn --bind 0.0.0.0:${PORT:-8000} 'scarz_pos:create_app()' --workers ${WEB_CONCURRENCY:-2} --timeout 60"

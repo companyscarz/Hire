@@ -1,32 +1,12 @@
-# Secrets and local environment
 .env
 .env.*
 !.env.example
-!.env.*.example
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
 .venv/
 venv/
-env/
+__pycache__/
+*.py[cod]
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
 .coverage
 htmlcov/
-
-# Local databases and uploaded data
-*.db
-*.sqlite
-*.sqlite3
 instance/
-uploads/
-storage/
-
-# Build and deployment output
-build/
-dist/
-*.egg-info/
 .DS_Store

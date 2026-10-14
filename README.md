@@ -1,78 +1,39 @@
-# Hire — ScarZ Cloud
+# ScarZ POS
 
-Hire is being repurposed as Company ScarZ's developer-hosting PWA. The goal is to let developers connect Git repositories, deploy supported applications, view CPU/RAM/storage/network usage, and manage hosting subscriptions without exposing the host server or other customers' resources.
+ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory application for small businesses. This branch replaces the Hire application on `pre-main` only; `main` is untouched and Git history is preserved.
 
-**Current status:** foundation in progress. This branch is not production-ready and must not be used for untrusted customer workloads yet.
+## MVP foundation included
+- Business-owner registration, login/logout, password hashing, CSRF protection and secure cookie settings in production.
+- Tenant-scoped products, stock quantities, sales, sale items, expenses and dashboard totals.
+- Checkout runs in a database transaction, locks selected product rows where supported, and rejects invalid quantities or insufficient stock.
+- PostgreSQL via `DATABASE_URL`, Flask application factory, SQLAlchemy, Flask-Migrate and Gunicorn/Nixpacks entrypoint.
+- Trial/subscription fields and server-side expiry checks as the foundation for paid plans.
+- Mobile-first PWA manifest and responsive interface.
+- CSV sales export and printable receipt.
 
-## Development branch
+## Important MVP limitations
+- Nylon Pay checkout and verified callbacks are **not activated yet**. Exact implementation must follow the official API documentation supplied by the owner; no guessed endpoints or unverified payment callbacks are used. Cash and other payment methods are currently recorded as sale payment labels, not processed electronically.
+- The first database bootstrap uses `db.create_all()` for a fresh MVP database. It does not alter existing tables. Before a public production launch, check in an initial Flask-Migrate revision and use migrations for all schema changes.
+- Email verification, password recovery, staff roles, returns/refunds, offline sale synchronization, rate limiting, advanced reporting and a complete security audit remain to be done.
+- Trial expiry is enforced for inventory creation, checkout and expense creation. The subscription checkout and self-service renewal flow are pending Nylon Pay verification.
 
-- Work on `pre-main`.
-- Do not merge to `main` without explicit approval.
+## Local setup
+1. Install Python 3.12+ and PostgreSQL.
+2. Create a database and copy `.env.example` to `.env`.
+3. `python -m venv .venv` then activate it.
+4. `pip install -r requirements.txt`
+5. `flask --app 'scarz_pos:create_app()' init-db`
+6. `flask --app 'scarz_pos:create_app()' run --debug`
 
-## New application foundation
+## Environment
+- `SECRET_KEY`: required in production; long random secret.
+- `DATABASE_URL`: PostgreSQL URL, e.g. `postgresql+psycopg://user:password@host:5432/scarz_pos`. `postgres://` is normalized.
+- `APP_ENV`: set to `production` on hosting.
+- `PORT`: hosting-provided port or 8000.
+- `NYLONPAY_*`: reserved for the verified integration after reviewing the official API docs. Never commit credentials.
 
-The new service lives in `app/hire_cloud/`, separate from the legacy job-board modules while the migration is underway.
+## Deployment
+Nixpacks builds from the repository root and starts Gunicorn on `0.0.0.0:$PORT`. Configure a persistent PostgreSQL database, set environment variables, and configure HTTPS/custom domain at the hosting provider. The startup command only creates missing tables; it is not a migration system and will not modify existing schema. Use a checked-in migration revision before introducing schema changes or opening a public production service.
 
-- Flask application factory: `hire_cloud:create_app()`
-- PostgreSQL is the intended production database.
-- SQLAlchemy models and Flask-Migrate are used for the new domain.
-- `app/cloud_requirements.txt` contains a minimal dependency set for the new service.
-- Authentication uses Werkzeug password hashing, signed Flask sessions, CSRF tokens for unsafe requests, and tenant-scoped project queries.
-- Nixpacks configuration: repository-root `nixpacks.toml`; it installs `app/cloud_requirements.txt` and starts Hire Cloud.
-- Tests: `app/tests/`
-
-## Nixpacks / Dokploy deployment
-
-The root `nixpacks.toml` starts `app/start_hire_cloud.sh`. That script applies checked-in Flask-Migrate revisions (`flask --app 'hire_cloud:create_app()' db upgrade --directory migrations`) before starting Gunicorn. If a migration fails, startup stops instead of serving login against missing tables such as `hc_users`.
-
-Use **port 8000** as the internal application port unless Dokploy explicitly supplies a different `PORT`. The app binds to `0.0.0.0`; route public HTTPS through Dokploy's proxy/domain configuration. Keep the build type set to **Nixpacks**, not Dockerfile. Keep the pilot to one app replica while startup runs migrations; before scaling, move migrations to a one-time pre-deploy/release step to avoid concurrent migration attempts.
-
-Add these values in Dokploy's server-side environment settings (never commit real values):
-
-- `APP_ENV=production`
-- `SECRET_KEY` — a long random secret, at least 32 random bytes
-- `DATABASE_URL` — private PostgreSQL connection string, preferably `postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME`
-- `PORT=8000` only if Dokploy does not already configure the internal port
-- `PUBLIC_BASE_URL=https://your-public-domain` — canonical HTTPS origin for verification/reset links
-- `REDIS_URL=redis://...` or `rediss://...` — private Redis connection for shared rate limiting
-- `MAIL_SERVER`, `MAIL_PORT=587`, `MAIL_USE_TLS=true`, and `MAIL_DEFAULT_SENDER`
-- `MAIL_USERNAME` and `MAIL_PASSWORD` when required by your SMTP provider
-
-The PostgreSQL user should be restricted to this application and must not be a superuser. Do not expose the database publicly unless properly protected.
-
-## Local development
-
-Run locally from the `app` directory:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r cloud_requirements.txt
-cp .env.example .env
-# Set DATABASE_URL to a local PostgreSQL database and set SECRET_KEY.
-bash start_hire_cloud.sh
-```
-
-**Migration status:** checked-in Flask-Migrate revisions live under `app/migrations/versions/`. CI applies them to a disposable PostgreSQL database and checks model/migration drift. Do not run `db init` or generate a new migration during deployment. The Nixpacks startup script applies pending revisions before Gunicorn starts.
-
-Implemented account routes include registration, email verification, login/logout, password recovery, resend verification, authenticated `GET /dashboard`, and tenant-scoped `GET /api/workspace/projects`. Password reset tokens are single-use and time-limited. MFA, tenant switching, billing, live metrics, Git OAuth, provisioning, and object storage are not implemented yet.
-
-Health endpoints:
-
-- `GET /health/live` — process liveness.
-- `GET /health/ready` — readiness, including database connectivity.
-
-**PWA update rule:** whenever the manifest or cached shell changes, bump `CACHE_NAME` in `app/hire_cloud/static/js/service-worker.js` and the manifest query version in the templates and service-worker shell list. The worker removes the previous Hire shell cache after the new version activates.
-
-## Security status and warnings
-
-- Secrets that were previously committed to `app/settings.py` have been removed from the current version of that file and moved to environment-based configuration. **Rotate the old credentials at their providers**; deleting them from the latest revision does not remove them from Git history.
-- Keep real `.env` files and credentials out of Git. Use Dokploy's server-side environment/secrets configuration.
-- The legacy job-board code still exists during migration and has not received a full security audit.
-- No automated customer provisioning, Git OAuth, object-storage access, payment processing, or production resource enforcement is complete yet.
-- Do not grant customers Docker socket, host shell, owner-level Dokploy, or broad server access.
-- A single shared VPS is not a strong enough boundary for arbitrary untrusted customer workloads. Use a restricted invite-only pilot and plan to separate customer workloads from Company ScarZ's own applications before public self-service hosting.
-
-## Architecture and delivery gates
-
-See [the implementation plan](docs/SCARZ_CLOUD_IMPLEMENTATION_PLAN.md) for the problem/solution map, target architecture, scope, milestones, documentation links, and acceptance criteria.
+## Safety
+Do not store payment secrets in source control. Do not trust browser-submitted prices or totals. All money values are decimal and server-calculated. Do not merge `pre-main` to `main` without explicit approval.
