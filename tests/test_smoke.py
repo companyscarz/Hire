@@ -239,8 +239,10 @@ def test_stock_adjustment_cannot_change_another_business_product(client, app):
     register(client, 'owner-one@example.com', 'Owner One')
     with app.app_context():
         other_business = Business(name='Owner Two')
+        db.session.add(other_business)
+        db.session.flush()
         other_product = Product(
-            business=other_business, name='Private item', sku='PRIVATE-1',
+            business_id=other_business.id, name='Private item', sku='PRIVATE-1',
             category='General', cost_price='1.00', selling_price='2.00',
             quantity=7, low_stock_at=2
         )
