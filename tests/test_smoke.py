@@ -294,3 +294,85 @@ def test_reports_reject_invalid_date_range(client):
     response = client.get('/reports.csv?start=not-a-date&end=2026-01-01')
     assert response.status_code == 400
 
+
+
+def _make_sale_for_void(client, app, sku='VOID-TEA'):
+    client.post('/products', data={
+        'name': 'Void tea', 'sku': sku, 'category': 'Groceries',
+        'cost_price': '2.00', 'selling_price': '3.50', 'quantity': '10',
+        'low_stock_at': '2'
+    }, follow_redirects=True)
+    with app.app_context():
+        product_id = Product.query.filter_by(sku=sku).one().id
+    response = client.post('/checkout', data={f'qty_{product_id}': '2', 'payment_method': 'cash'}, follow_redirects=True)
+    assert response.status_code == 200
+    with app.app_context():
+        from scarz_pos.models import Sale
+        return Sale.query.order_by(Sale.id.desc()).first().id, product_id
+
+
+def test_void_sale_restores_inventory_once_and_is_excluded_from_reports(client, app):
+    register(client)
+    sale_id, product_id = _make_sale_for_void(client, app)
+    response = client.post(f'/sales/{sale_id}/void', data={'reason': 'Duplicate checkout'}, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'SALE VOIDED' in response.data
+    assert b'Duplicate checkout' in response.data
+
+    with app.app_context():
+        from scarz_pos.models import SaleVoid, StockMovement
+        assert db.session.get(Product, product_id).quantity == 10
+        assert SaleVoid.query.filter_by(sale_id=sale_id).count() == 1
+        movement = StockMovement.query.filter_by(sale_id=sale_id).order_by(StockMovement.id.desc()).first()
+        assert (movement.quantity_change, movement.quantity_before, movement.quantity_after) == (2, 8, 10)
+        assert movement.reason == f'Void sale #{sale_id}: Duplicate checkout'
+
+    client.post(f'/sales/{sale_id}/void', data={'reason': 'Repeat request'}, follow_redirects=True)
+    with app.app_context():
+        from scarz_pos.models import SaleVoid, StockMovement
+        assert db.session.get(Product, product_id).quantity == 10
+        assert SaleVoid.query.filter_by(sale_id=sale_id).count() == 1
+        assert StockMovement.query.filter_by(sale_id=sale_id).count() == 2
+
+    report = client.get('/reports')
+    assert report.status_code == 200
+    assert b'0 completed transactions' in report.data
+    csv_response = client.get('/reports.csv')
+    assert csv_response.status_code == 200
+    assert f',{sale_id},'.encode() not in csv_response.data
+
+
+def test_void_sale_requires_reason_and_cannot_cross_business(client, app):
+    register(client)
+    sale_id, product_id = _make_sale_for_void(client, app, sku='VOID-REASON')
+    response = client.post(f'/sales/{sale_id}/void', data={'reason': '   '}, follow_redirects=True)
+    assert response.status_code == 200
+    with app.app_context():
+        from scarz_pos.models import SaleVoid
+        assert db.session.get(Product, product_id).quantity == 8
+        assert SaleVoid.query.filter_by(sale_id=sale_id).count() == 0
+
+        other_business = Business(name='Other business')
+        db.session.add(other_business)
+        db.session.flush()
+        other_user = User(business_id=other_business.id, full_name='Other Owner', email='other-void@example.com')
+        other_user.set_password('very-long-password')
+        db.session.add(other_user)
+        db.session.flush()
+        other_product = Product(business_id=other_business.id, name='Private product', sku='PRIVATE-VOID', category='General', cost_price='1.00', selling_price='2.00', quantity=5, low_stock_at=1)
+        db.session.add(other_product)
+        db.session.flush()
+        from scarz_pos.models import Sale, SaleItem
+        other_sale = Sale(business_id=other_business.id, user_id=other_user.id, total='2.00', payment_method='cash')
+        db.session.add(other_sale)
+        db.session.flush()
+        db.session.add(SaleItem(sale_id=other_sale.id, product_id=other_product.id, product_name='Private product', quantity=1, unit_price='2.00', unit_cost='1.00'))
+        db.session.commit()
+        other_sale_id, other_product_id = other_sale.id, other_product.id
+
+    response = client.post(f'/sales/{other_sale_id}/void', data={'reason': 'Cross tenant attempt'}, follow_redirects=True)
+    assert response.status_code == 404
+    with app.app_context():
+        from scarz_pos.models import SaleVoid
+        assert db.session.get(Product, other_product_id).quantity == 5
+        assert SaleVoid.query.filter_by(sale_id=other_sale_id).count() == 0
