@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from .extensions import db
 from .models import Expense, Product, Sale, SaleItem
 
@@ -67,7 +68,7 @@ def products():
             db.session.commit()
             flash('Product saved.', 'success')
             return redirect(url_for('views.products'))
-        except (ValueError, InvalidOperation):
+        except (ValueError, InvalidOperation, IntegrityError):
             db.session.rollback()
             flash('Please check the product details. SKU must be unique within your business.', 'error')
     items = Product.query.filter_by(business_id=current_user.business_id).order_by(Product.name).all()

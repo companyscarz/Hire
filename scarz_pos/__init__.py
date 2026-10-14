@@ -23,6 +23,10 @@ def create_app(test_config=None):
         SESSION_COOKIE_SAMESITE='Lax',
         SESSION_COOKIE_SECURE=os.getenv('APP_ENV') == 'production',
         PERMANENT_SESSION_LIFETIME=timedelta(days=14),
+        REMEMBER_COOKIE_DURATION=timedelta(days=14),
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE='Lax',
+        REMEMBER_COOKIE_SECURE=os.getenv('APP_ENV') == 'production',
         WTF_CSRF_TIME_LIMIT=3600,
     )
     if test_config:

@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, logout_user
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from .extensions import db
 from .models import Business, User
 
@@ -40,7 +40,12 @@ def register():
             user = User(business=business, full_name=full_name, email=email, role='owner')
             user.set_password(password)
             db.session.add_all([business, user])
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash('An account with that email already exists. Please sign in instead.', 'error')
+                return render_template('register.html')
             login_user(user, remember=True, fresh=True)
             flash('Your 14-day trial has started. Add your first product to begin.', 'success')
             return redirect(url_for('views.dashboard'))
