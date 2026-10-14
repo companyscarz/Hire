@@ -139,3 +139,16 @@ class StockMovement(db.Model):
         db.CheckConstraint('quantity_change != 0', name='ck_stock_movement_nonzero_change'),
     )
 
+
+
+class SaleVoid(db.Model):
+    """Immutable audit record for a completed sale void; one void per sale."""
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('business.id', ondelete='CASCADE'), nullable=False, index=True)
+    sale_id = db.Column(db.Integer, db.ForeignKey('sale.id', ondelete='CASCADE'), nullable=False, unique=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    reason = db.Column(db.String(240), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)
+    sale = db.relationship('Sale', backref=db.backref('void_record', uselist=False))
+    user = db.relationship('User')
+    business = db.relationship('Business')
