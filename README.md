@@ -5,11 +5,13 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 ## MVP foundation included
 - Business-owner registration, login/logout, password hashing, CSRF protection and secure cookie settings in production.
 - Tenant-scoped products, stock quantities, sales, sale items, expenses and dashboard totals.
+- Auditable stock ledger for opening stock, completed-sale deductions, and manual additions/removals with before/after quantities and reasons; manual adjustments cannot create negative stock or change another business's inventory.
 - Checkout runs in a database transaction, locks selected product rows where supported, and rejects invalid quantities or insufficient stock.
 - PostgreSQL via `DATABASE_URL`, Flask application factory, SQLAlchemy, Flask-Migrate and Gunicorn/Nixpacks entrypoint.
 - Trial/subscription fields and server-side expiry checks as the foundation for paid plans.
 - Mobile-first PWA manifest and responsive interface.
 - CSV sales export and printable receipt.
+- Automated CI workflow for Python compilation and pytest on `pre-main` pushes and pull requests.
 
 ## Important MVP limitations
 - Subscription checkout uses the Nylon Pay SDK pattern already used in Digital Read/Qavzuno: pending payment record, Mobile Money collection, signed webhook verification, reference matching, amount/currency checks, and idempotent subscription activation. POS sales' local payment labels are not electronic payment processing.
