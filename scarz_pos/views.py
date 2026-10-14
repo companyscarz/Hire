@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import func, case
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from .extensions import db
 from .models import Expense, Product, Sale, SaleItem, StockMovement
@@ -249,11 +249,6 @@ def report_period():
 
 def report_data(start_at, end_at):
     bid = current_user.business_id
-    sales_query = Sale.query.filter(
-        Sale.business_id == bid,
-        Sale.created_at >= start_at,
-        Sale.created_at < end_at,
-    )
     sales_count, revenue = db.session.query(
         func.count(Sale.id),
         func.coalesce(func.sum(Sale.total), 0),
