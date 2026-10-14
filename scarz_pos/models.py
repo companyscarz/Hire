@@ -118,3 +118,24 @@ def load_user(user_id):
         return db.session.get(User, int(user_id))
     except (TypeError, ValueError):
         return None
+
+class StockMovement(db.Model):
+    """Auditable inventory ledger; positive quantities add stock, negative quantities remove it."""
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('business.id', ondelete='CASCADE'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+    sale_id = db.Column(db.Integer, db.ForeignKey('sale.id', ondelete='SET NULL'), index=True)
+    quantity_change = db.Column(db.Integer, nullable=False)
+    quantity_before = db.Column(db.Integer, nullable=False)
+    quantity_after = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)
+    product = db.relationship('Product', backref=db.backref('stock_movements', lazy=True))
+    user = db.relationship('User')
+    sale = db.relationship('Sale')
+    __table_args__ = (
+        db.CheckConstraint('quantity_before >= 0 AND quantity_after >= 0', name='ck_stock_movement_nonnegative_levels'),
+        db.CheckConstraint('quantity_change != 0', name='ck_stock_movement_nonzero_change'),
+    )
+
