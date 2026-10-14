@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.exc import IntegrityError
 from .extensions import db
 from .models import Expense, Product, Sale, SaleItem, StockMovement
@@ -227,17 +227,144 @@ def expenses():
     return render_template('expenses.html', expenses=items)
 
 
+def report_period():
+    """Parse inclusive date filters into a half-open UTC interval."""
+    today = datetime.now(timezone.utc).date()
+    default_start = today.replace(day=1)
+    raw_start = request.args.get('start', default_start.isoformat())
+    raw_end = request.args.get('end', today.isoformat())
+    try:
+        start_date = date.fromisoformat(raw_start)
+        end_date = date.fromisoformat(raw_end)
+    except (TypeError, ValueError):
+        raise ValueError('Use valid start and end dates.')
+    if end_date < start_date:
+        raise ValueError('The end date must be on or after the start date.')
+    if (end_date - start_date).days > 366:
+        raise ValueError('Choose a date range of 366 days or fewer.')
+    start_at = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+    end_at = datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    return start_date, end_date, start_at, end_at
+
+
+def report_data(start_at, end_at):
+    bid = current_user.business_id
+    sales_query = Sale.query.filter(
+        Sale.business_id == bid,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    )
+    sales_count, revenue = db.session.query(
+        func.count(Sale.id),
+        func.coalesce(func.sum(Sale.total), 0),
+    ).filter(
+        Sale.business_id == bid,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    ).one()
+    cost = db.session.query(
+        func.coalesce(func.sum(SaleItem.quantity * SaleItem.unit_cost), 0)
+    ).join(Sale, Sale.id == SaleItem.sale_id).filter(
+        Sale.business_id == bid,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    ).scalar()
+    expense_total = db.session.query(
+        func.coalesce(func.sum(Expense.amount), 0)
+    ).filter(
+        Expense.business_id == bid,
+        Expense.created_at >= start_at,
+        Expense.created_at < end_at,
+    ).scalar()
+    payment_rows = db.session.query(
+        Sale.payment_method,
+        func.count(Sale.id),
+        func.coalesce(func.sum(Sale.total), 0),
+    ).filter(
+        Sale.business_id == bid,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    ).group_by(Sale.payment_method).order_by(Sale.payment_method).all()
+    daily_rows = db.session.query(
+        func.date(Sale.created_at),
+        func.count(Sale.id),
+        func.coalesce(func.sum(Sale.total), 0),
+    ).filter(
+        Sale.business_id == bid,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    ).group_by(func.date(Sale.created_at)).order_by(func.date(Sale.created_at)).all()
+    revenue = Decimal(str(revenue or 0))
+    cost = Decimal(str(cost or 0))
+    expense_total = Decimal(str(expense_total or 0))
+    gross_profit = revenue - cost
+    return {
+        'sales_count': sales_count,
+        'revenue': revenue,
+        'cost': cost,
+        'gross_profit': gross_profit,
+        'expenses': expense_total,
+        'net_estimate': gross_profit - expense_total,
+        'payment_rows': payment_rows,
+        'daily_rows': daily_rows,
+    }
+
+
+@bp.get('/reports')
+@login_required
+def reports():
+    try:
+        start_date, end_date, start_at, end_at = report_period()
+    except ValueError as exc:
+        flash(str(exc), 'error')
+        today = datetime.now(timezone.utc).date()
+        return redirect(url_for('views.reports', start=today.replace(day=1).isoformat(), end=today.isoformat()))
+    data = report_data(start_at, end_at)
+    return render_template(
+        'reports.html',
+        start_date=start_date.isoformat(),
+        end_date=end_date.isoformat(),
+        report=data,
+    )
+
+
 @bp.get('/reports.csv')
 @login_required
 def reports_csv():
     import csv, io
     from flask import Response
+    try:
+        start_date, end_date, start_at, end_at = report_period()
+    except ValueError as exc:
+        abort(400, description=str(exc))
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Sale ID', 'Date (UTC)', 'Payment method', 'Total', 'Items', 'Estimated gross profit'])
-    items = Sale.query.filter_by(business_id=current_user.business_id).order_by(Sale.created_at.desc()).limit(5000).all()
+    writer.writerow(['Report start (UTC)', start_date.isoformat()])
+    writer.writerow(['Report end (UTC)', end_date.isoformat()])
+    writer.writerow([])
+    writer.writerow(['Sale ID', 'Date (UTC)', 'Payment method', 'Total', 'Items', 'Cost of goods', 'Estimated gross profit'])
+    items = Sale.query.filter(
+        Sale.business_id == current_user.business_id,
+        Sale.created_at >= start_at,
+        Sale.created_at < end_at,
+    ).order_by(Sale.created_at.desc()).all()
     for sale in items:
         units = sum(i.quantity for i in sale.items)
+        cost = sum(i.unit_cost * i.quantity for i in sale.items)
         profit = sum((i.unit_price - i.unit_cost) * i.quantity for i in sale.items)
-        writer.writerow([sale.id, sale.created_at.isoformat(), sale.payment_method, sale.total, units, profit])
-    return Response('\ufeff' + output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=scarz-pos-sales.csv'})
+        writer.writerow([sale.id, sale.created_at.isoformat(), sale.payment_method, sale.total, units, cost, profit])
+    writer.writerow([])
+    writer.writerow(['Expenses (date UTC)', 'Description', 'Amount'])
+    expenses = Expense.query.filter(
+        Expense.business_id == current_user.business_id,
+        Expense.created_at >= start_at,
+        Expense.created_at < end_at,
+    ).order_by(Expense.created_at.desc()).all()
+    for expense in expenses:
+        writer.writerow([expense.created_at.isoformat(), expense.description, expense.amount])
+    return Response(
+        '\ufeff' + output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=scarz-pos-report-{start_date.isoformat()}-to-{end_date.isoformat()}.csv'},
+    )
+
