@@ -61,8 +61,14 @@ def create_app(test_config=None):
             'CREATE UNIQUE INDEX IF NOT EXISTS uq_product_business_barcode '
             'ON product (business_id, barcode)'
         ))
+        scanner_columns = {column['name'] for column in inspect(db.engine).get_columns('phone_scanner_session')}
+        if 'pending_codes' not in scanner_columns:
+            db.session.execute(text(
+                "ALTER TABLE phone_scanner_session ADD COLUMN pending_codes JSON NOT NULL DEFAULT '[]'"
+            ))
+            db.session.commit()
         db.session.commit()
-        print('ScarZ POS tables are present; barcode schema is ready.')
+        print('ScarZ POS tables are present; barcode and wireless-scanner schemas are ready.')
 
     @app.get('/health/live')
     def health_live():
