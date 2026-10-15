@@ -22,3 +22,124 @@ document.addEventListener('DOMContentLoaded',()=>{
     svg+='</svg>';node.innerHTML=svg;
   });
 });
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const search=document.getElementById('product-search');
+  const rows=[...document.querySelectorAll('[data-product-row]')];
+  const status=document.getElementById('product-search-status');
+  const dialog=document.getElementById('barcode-camera-dialog');
+  const video=document.getElementById('barcode-camera-video');
+  const cameraStatus=document.getElementById('barcode-camera-status');
+  let stream=null, frame=0, scanning=false;
+  const normalise=value=>String(value||'').trim().toLocaleLowerCase();
+  const filterRows=()=>{
+    if(!search)return;
+    const query=normalise(search.value);
+    rows.forEach(row=>{
+      const haystack=[row.dataset.productName,row.dataset.productSku,row.dataset.productBarcode].map(normalise);
+      row.hidden=Boolean(query)&&!haystack.some(value=>value.includes(query));
+    });
+  };
+  const updateSearchStatus=message=>{if(status)status.textContent=message;};
+  const addExactMatch=code=>{
+    if(!search)return false;
+    const wanted=String(code||'').trim();
+    if(!wanted)return false;
+    const row=rows.find(item=>item.dataset.productBarcode===wanted||item.dataset.productSku===wanted);
+    if(!row)return false;
+    const qty=row.querySelector('.qty-input');
+    const available=Number.parseInt(qty?.max||'0',10)||0;
+    const current=Number.parseInt(qty?.value||'0',10)||0;
+    if(!qty||available<1){updateSearchStatus('This item is out of stock. Check inventory before selling it.');return true;}
+    if(current>=available){updateSearchStatus('Only '+available+' unit(s) are in stock for '+row.querySelector('td strong')?.textContent+'.');return true;}
+    qty.value=String(current+1);
+    qty.dispatchEvent(new Event('input',{bubbles:true}));
+    updateSearchStatus('Added '+row.querySelector('td strong')?.textContent+' · quantity '+qty.value+'.');
+    search.value='';
+    filterRows();
+    search.focus();
+    return true;
+  };
+  if(search){
+    search.addEventListener('input',filterRows);
+    search.addEventListener('keydown',event=>{
+      if(event.key!=='Enter')return;
+      event.preventDefault();
+      if(!addExactMatch(search.value))updateSearchStatus('No exact barcode or SKU match. Keep searching by name, or register the barcode on the Products page.');
+    });
+    search.addEventListener('barcode:detected',event=>{
+      const code=event.detail?.value||search.value;
+      if(!addExactMatch(code))updateSearchStatus('No product matches barcode '+code+'. Register the item on the Products page first.');
+    });
+  }
+  const stopCamera=()=>{
+    scanning=false;
+    if(frame)cancelAnimationFrame(frame);
+    frame=0;
+    if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
+    if(video)video.srcObject=null;
+  };
+  document.querySelectorAll('[data-scanner-close]').forEach(button=>button.addEventListener('click',()=>{
+    stopCamera();
+    if(dialog?.open)dialog.close();
+  }));
+  if(dialog)dialog.addEventListener('cancel',stopCamera);
+  document.querySelectorAll('[data-barcode-scanner]').forEach(button=>button.addEventListener('click',async()=>{
+    const target=document.getElementById(button.dataset.barcodeTarget);
+    if(!target)return;
+    if(!window.BarcodeDetector){
+      if(cameraStatus)cameraStatus.textContent='This browser does not provide native barcode detection. Type the barcode or use a USB/Bluetooth scanner; no extra library is installed.';
+      if(dialog&&!dialog.open)dialog.showModal();
+      return;
+    }
+    if(!navigator.mediaDevices?.getUserMedia){
+      if(cameraStatus)cameraStatus.textContent='Camera access is unavailable in this browser or page context. Type the barcode or use a USB/Bluetooth scanner.';
+      if(dialog&&!dialog.open)dialog.showModal();
+      return;
+    }
+    if(dialog&&!dialog.open)dialog.showModal();
+    if(cameraStatus)cameraStatus.textContent='Requesting camera access…';
+    try{
+      const availableFormats=await BarcodeDetector.getSupportedFormats();
+      const formats=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'].filter(format=>availableFormats.includes(format));
+      if(!formats.length){
+        if(cameraStatus)cameraStatus.textContent='This browser cannot detect common retail barcodes. Type the barcode or use a USB/Bluetooth scanner.';
+        return;
+      }
+      const detector=new BarcodeDetector({formats});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      video.srcObject=stream;
+      await video.play();
+      scanning=true;
+      if(cameraStatus)cameraStatus.textContent='Hold the barcode steady inside the camera view.';
+      const scanFrame=async()=>{
+        if(!scanning)return;
+        try{
+          const codes=await detector.detect(video);
+          const value=codes.find(code=>code.rawValue)?.rawValue;
+          if(value){
+            stopCamera();
+            target.value=value;
+            target.dispatchEvent(new Event('input',{bubbles:true}));
+            target.dispatchEvent(new CustomEvent('barcode:detected',{bubbles:true,detail:{value}}));
+            if(dialog?.open)dialog.close();
+            if(target.id==='product-barcode')target.focus();
+            return;
+          }
+        }catch(_error){
+          stopCamera();
+          if(cameraStatus)cameraStatus.textContent='The camera could not read this barcode. Try better lighting, type it manually, or use a hardware scanner.';
+          return;
+        }
+        frame=requestAnimationFrame(scanFrame);
+      };
+      frame=requestAnimationFrame(scanFrame);
+    }catch(_error){
+      stopCamera();
+      if(cameraStatus)cameraStatus.textContent='Camera permission or hardware is unavailable. Type the barcode or use a USB/Bluetooth scanner.';
+    }
+  }));
+  if(!window.BarcodeDetector){
+    document.querySelectorAll('[data-scanner-help]').forEach(node=>node.textContent='Camera scanning is not supported in this browser. Type the barcode or use a USB/Bluetooth scanner; product entry and sales search still work.');
+  }
+});
