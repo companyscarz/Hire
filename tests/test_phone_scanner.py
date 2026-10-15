@@ -1,7 +1,29 @@
 from datetime import timedelta
 
+import pytest
+from scarz_pos import create_app
 from scarz_pos.extensions import db
 from scarz_pos.models import utcnow
+
+
+@pytest.fixture()
+def app():
+    app = create_app({
+        "TESTING": True,
+        "SECRET_KEY": "test-secret-long-enough",
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "WTF_CSRF_ENABLED": False,
+    })
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
 
 
 def _register(client, email="scanner@example.com"):
