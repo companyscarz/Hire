@@ -4,7 +4,7 @@
 <section class="page-heading"><div><div class="eyebrow">WIRELESS SCANNER</div><h1>Phone barcode scanner</h1><p class="muted">Scan a product and send its barcode to the paired checkout computer.</p></div></section>
 <section class="panel scanner-phone-panel">
   <p><strong>Pairing is temporary.</strong> This link expires automatically. Keep this page open while scanning.</p>
-  <video id="phone-scan-video" playsinline muted autoplay style="width:100%;max-height:55vh;background:#07111f;border-radius:12px"></video>
+  <video id="phone-scan-video" playsinline muted autoplay style="width:100%;max-height:55vh;min-height:220px;background:#07111f;border-radius:12px;object-fit:contain"></video>
   <p id="phone-scan-status" class="muted" aria-live="polite">Tap Start camera, then point your phone at a product barcode.</p>
   <div class="form-actions"><button id="phone-scan-start" class="button primary" type="button">Start camera</button><button id="phone-scan-stop" class="button secondary" type="button">Stop camera</button></div>
   <form id="phone-manual-form" class="form-stack" style="margin-top:1rem">
@@ -22,8 +22,22 @@
   const stop = document.getElementById('phone-scan-stop');
   const manual = document.getElementById('phone-manual-form');
   const manualInput = document.getElementById('phone-manual-code');
-  let stream = null, detector = null, reader = null, active = false, lastValue = '', lastAt = 0;
-  const say = value => status.textContent = value;
+  let stream = null, reader = null, active = false, lastValue = '', lastAt = 0, scriptPromise = null;
+  const say = value => { status.textContent = value; };
+  const loadDecoder = () => {
+    if (window.ZXing?.BrowserMultiFormatReader) return Promise.resolve();
+    if (scriptPromise) return scriptPromise;
+    scriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+      script.onload = () => window.ZXing?.BrowserMultiFormatReader
+        ? resolve()
+        : reject(new Error('Barcode decoder loaded, but its reader is unavailable.'));
+      script.onerror = () => reject(new Error('Scanner library could not load. Check the phone internet connection.'));
+      document.head.appendChild(script);
+    });
+    return scriptPromise;
+  };
   const send = async code => {
     code = String(code || '').trim();
     if (!code || (code === lastValue && Date.now() - lastAt < 1800)) return;
@@ -31,12 +45,13 @@
     say('Sending barcode ' + code + ' to checkout…');
     try {
       const response = await fetch('/scanner/phone/' + encodeURIComponent(token) + '/code', {
-        method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken':csrfToken},
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':csrfToken},
         body: JSON.stringify({code})
       });
-      if (!response.ok) throw new Error('Pairing expired or connection lost.');
+      if (!response.ok) throw new Error(response.status === 404 ? 'Pairing expired. Reconnect from the checkout computer.' : 'Could not send barcode. Check the connection.');
       say('Sent ' + code + '. Ready for the next item.');
-      if (navigator.vibrate) navigator.vibrate(80);
+      if (navigator.vibrate) navigator.vibrate(70);
     } catch (error) { say(error.message || 'Could not send barcode. Check the connection.'); }
   };
   const stopCamera = () => {
@@ -46,53 +61,62 @@
     video.pause(); video.srcObject = null;
   };
   stop.addEventListener('click', stopCamera);
-  manual.addEventListener('submit', event => { event.preventDefault(); send(manualInput.value); manualInput.value = ''; });
+  manual.addEventListener('submit', event => {
+    event.preventDefault();
+    const code = manualInput.value;
+    manualInput.value = '';
+    send(code);
+  });
   start.addEventListener('click', async () => {
     stopCamera();
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       say('Camera access needs HTTPS. Open this pairing link on the secure site, or enter the barcode manually.');
       return;
     }
+    start.disabled = true;
+    say('Requesting camera permission…');
     try {
-      stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false});
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}},
+        audio: false
+      });
       video.srcObject = stream;
+      video.muted = true;
       await video.play();
-      active = true;
-      const formats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'];
-      if ('BarcodeDetector' in window) {
-        try { detector = new BarcodeDetector({formats}); } catch (_) { detector = new BarcodeDetector(); }
-      }
-      if (!detector) {
-        await new Promise((resolve,reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
-          script.onload = resolve; script.onerror = () => reject(new Error('Scanner library could not load. Check internet access.'));
-          document.head.appendChild(script);
-        });
-        if (!window.ZXing) throw new Error('Barcode decoder is unavailable.');
-        const hints = new Map();
-        if (ZXing.DecodeHintType?.TRY_HARDER) hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-        reader = new ZXing.BrowserMultiFormatReader(hints, 250);
-        say('Camera active. Center the printed barcode in good light.');
-        reader.decodeFromVideoElementContinuously(video, (result) => {
-          if (active && result?.getText) send(result.getText());
-        });
-        return;
-      }
-      say('Camera active. Center the printed barcode in good light.');
-      const loop = async () => {
-        if (!active) return;
+      const track = stream.getVideoTracks()[0];
+      if (track?.applyConstraints) {
         try {
-          const codes = await detector.detect(video);
-          if (codes.length) await send(codes[0].rawValue);
+          const caps = track.getCapabilities?.() || {};
+          if (caps.focusMode?.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
         } catch (_) {}
-        if (active) requestAnimationFrame(loop);
-      };
-      requestAnimationFrame(loop);
+      }
+      await loadDecoder();
+      const z = window.ZXing;
+      const hints = new Map();
+      const formats = [
+        z.BarcodeFormat.EAN_13, z.BarcodeFormat.EAN_8, z.BarcodeFormat.UPC_A,
+        z.BarcodeFormat.UPC_E, z.BarcodeFormat.CODE_128, z.BarcodeFormat.CODE_39,
+        z.BarcodeFormat.ITF, z.BarcodeFormat.CODABAR
+      ].filter(value => value !== undefined);
+      if (z.DecodeHintType?.POSSIBLE_FORMATS && formats.length) hints.set(z.DecodeHintType.POSSIBLE_FORMATS, formats);
+      if (z.DecodeHintType?.TRY_HARDER) hints.set(z.DecodeHintType.TRY_HARDER, true);
+      reader = new z.BrowserMultiFormatReader(hints, 250);
+      active = true;
+      say('Camera active. Center the printed barcode, use good light, and hold it steady.');
+      reader.decodeFromVideoElementContinuously(video, result => {
+        if (active && result?.getText) send(result.getText());
+      }).catch(error => {
+        if (active) say('Scanner stopped: ' + (error?.message || 'video decoding failed') + '. Try better light or manual entry.');
+      });
     } catch (error) {
       stopCamera();
-      say(error.name === 'NotAllowedError' ? 'Camera permission denied. Allow camera access in your browser settings.' : (error.message || 'Could not start camera. Try manual entry.'));
-    }
+      const name = error?.name || '';
+      say(name === 'NotAllowedError'
+        ? 'Camera permission denied. Allow camera access in your phone browser settings.'
+        : name === 'NotFoundError'
+          ? 'No phone camera was found. You can still enter the barcode manually.'
+          : (error.message || 'Could not start camera. Check HTTPS and internet access, or use manual entry.'));
+    } finally { start.disabled = false; }
   });
   window.addEventListener('pagehide', stopCamera);
 })();
