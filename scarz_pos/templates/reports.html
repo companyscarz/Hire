@@ -1,47 +1,19 @@
 {% extends 'base.html' %}
 {% block title %}Reports · ScarZ POS{% endblock %}
 {% block content %}
-<section class="page-heading">
-  <div><div class="eyebrow">BUSINESS PERFORMANCE</div><h1>Reports</h1><p class="muted">Review completed sales, cost of goods, expenses and estimated profit. Voided transactions remain in history but are excluded from these totals.</p></div>
-  <a class="button secondary" href="{{ url_for('views.reports_csv', start=start_date, end=end_date) }}">Export this report ↓</a>
-</section>
-<section class="panel report-filter">
-  <form method="get" action="{{ url_for('views.reports') }}" class="report-filter-form">
-    <label>Start date<input type="date" name="start" value="{{ start_date }}" required></label>
-    <label>End date<input type="date" name="end" value="{{ end_date }}" required></label>
-    <button class="button primary" type="submit">Apply dates</button>
-  </form>
-  <p class="muted report-note">Dates are interpreted in UTC. Reports allow a range of up to 367 calendar dates.</p>
-</section>
+<section class="page-heading"><div><div class="eyebrow">BUSINESS PERFORMANCE</div><h1>Reports & analytics</h1><p class="muted">Explore revenue, product costs, expenses and estimated profit. Voided transactions remain in history but are excluded from analytics.</p></div><a class="button secondary" href="{{ url_for('views.reports_csv', start=start_date, end=end_date) }}">Export CSV ↓</a></section>
+<section class="panel report-filter"><form method="get" action="{{ url_for('views.reports') }}" class="report-filter-form"><label>Start date<input type="date" name="start" value="{{ start_date }}" required></label><label>End date<input type="date" name="end" value="{{ end_date }}" required></label><button class="button primary" type="submit">Apply dates</button></form><p class="muted report-note">Dates are interpreted in UTC. Choose a range of up to 367 calendar dates.</p></section>
 <div class="stats report-stats">
   <article class="stat"><span>Sales revenue</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.revenue|float) }}</strong><small>{{ report.sales_count }} completed transactions</small></article>
-  <article class="stat"><span>Cost of goods sold</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.cost|float) }}</strong><small>Based on saved unit costs</small></article>
+  <article class="stat"><span>Cost of goods sold</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.cost|float) }}</strong><small>Saved unit costs for completed sales</small></article>
   <article class="stat"><span>Estimated gross profit</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.gross_profit|float) }}</strong><small>Revenue less cost of goods</small></article>
   <article class="stat"><span>Expenses recorded</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.expenses|float) }}</strong><small>Expenses entered for the period</small></article>
 </div>
-<section class="panel report-result">
-  <div class="panel-heading"><div><h2>Estimated operating result</h2><p class="muted">Gross profit minus recorded expenses; this is not a tax or audited accounting statement.</p></div><span class="pill">{{ start_date }} → {{ end_date }}</span></div>
-  <div class="report-net {% if report.net_estimate < 0 %}negative{% else %}positive{% endif %}">
-    <span>Estimated net before other costs and taxes</span>
-    <strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.net_estimate|float) }}</strong>
-  </div>
-</section>
+<section class="panel report-result"><div class="panel-heading"><div><h2>Estimated operating result</h2><p class="muted">Gross profit minus recorded expenses; not a tax or audited accounting statement.</p></div><span class="pill">{{ start_date }} → {{ end_date }}</span></div><div class="report-net {% if report.net_estimate < 0 %}negative{% else %}positive{% endif %}"><span>Estimated net before other costs and taxes</span><strong>{{ current_user.business.currency }} {{ '%.2f'|format(report.net_estimate|float) }}</strong></div></section>
+<section class="panel chart-panel"><div class="panel-heading"><div><h2>Revenue & profitability trend</h2><p class="muted chart-subtitle">Daily values for the selected period; voided sales are excluded</p></div><span class="pill">{{ report.chart_rows|length }} days</span></div><div class="chart-legend"><span><i class="legend-dot revenue"></i>Revenue</span><span><i class="legend-dot profit"></i>Gross profit</span><span><i class="legend-dot expenses"></i>Expenses</span></div><div class="chart-wrap"><div class="chart" data-chart="line" data-chart-title="Daily revenue and profit" data-chart-data="{{ report.chart_rows|tojson|forceescape }}" data-chart-series='[{"key":"revenue","label":"Revenue","color":"#e8a020"},{"key":"gross_profit","label":"Gross profit","color":"#16794b"},{"key":"expenses","label":"Expenses","color":"#64748b"}]' role="img" aria-label="Line chart comparing daily revenue, gross profit and expenses"></div></div></section>
 <div class="content-grid report-grid">
-  <section class="panel">
-    <div class="panel-heading"><h2>By payment method</h2></div>
-    {% if report.payment_rows %}
-    <div class="table-wrap"><table><thead><tr><th>Method</th><th>Transactions</th><th>Revenue</th></tr></thead><tbody>
-    {% for method, count, total in report.payment_rows %}<tr><td>{{ method|replace('_',' ')|title }}</td><td>{{ count }}</td><td>{{ current_user.business.currency }} {{ '%.2f'|format(total|float) }}</td></tr>{% endfor %}
-    </tbody></table></div>
-    {% else %}<div class="empty"><strong>No sales in this period</strong><p>Completed sales will be summarized here.</p></div>{% endif %}
-  </section>
-  <section class="panel">
-    <div class="panel-heading"><h2>Daily sales</h2><span class="pill">{{ report.daily_rows|length }} active days</span></div>
-    {% if report.daily_rows %}
-    <div class="table-wrap"><table><thead><tr><th>Date (UTC)</th><th>Transactions</th><th>Revenue</th></tr></thead><tbody>
-    {% for day, count, total in report.daily_rows %}<tr><td>{{ day }}</td><td>{{ count }}</td><td>{{ current_user.business.currency }} {{ '%.2f'|format(total|float) }}</td></tr>{% endfor %}
-    </tbody></table></div>
-    {% else %}<div class="empty"><strong>No daily activity yet</strong><p>Sales will appear here once recorded.</p></div>{% endif %}
-  </section>
+  <section class="panel"><div class="panel-heading"><div><h2>Revenue by payment method</h2><p class="muted chart-subtitle">Completed sales only</p></div></div>{% if report.payment_chart %}<div class="chart-wrap"><div class="chart" data-chart="bars" data-chart-title="Revenue" data-chart-data="{{ report.payment_chart|tojson|forceescape }}" data-chart-series='[{"key":"revenue","label":"Revenue","color":"#e8a020"}]' role="img" aria-label="Bar chart showing revenue by payment method"></div></div>{% else %}<div class="empty"><strong>No sales in this period</strong><p>Payment-method comparisons will appear after a completed sale.</p></div>{% endif %}</section>
+  <section class="panel"><div class="panel-heading"><h2>By payment method</h2></div>{% if report.payment_rows %}<div class="table-wrap"><table><thead><tr><th>Method</th><th>Transactions</th><th>Revenue</th></tr></thead><tbody>{% for method, count, total in report.payment_rows %}<tr><td>{{ method|replace('_',' ')|title }}</td><td>{{ count }}</td><td>{{ current_user.business.currency }} {{ '%.2f'|format(total|float) }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty"><strong>No sales in this period</strong><p>Completed sales will be summarized here.</p></div>{% endif %}</section>
 </div>
+<section class="panel report-result"><div class="panel-heading"><div><h2>Daily breakdown</h2><p class="muted">The chart includes zero-sales days; this table lists days with completed transactions.</p></div><span class="pill">{{ report.daily_rows|length }} active days</span></div>{% if report.daily_rows %}<div class="table-wrap"><table><thead><tr><th>Date (UTC)</th><th>Transactions</th><th>Revenue</th></tr></thead><tbody>{% for day, count, total in report.daily_rows %}<tr><td>{{ day }}</td><td>{{ count }}</td><td>{{ current_user.business.currency }} {{ '%.2f'|format(total|float) }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty"><strong>No daily activity yet</strong><p>Completed sales will appear here once recorded.</p></div>{% endif %}</section>
 {% endblock %}

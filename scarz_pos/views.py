@@ -39,15 +39,60 @@ def home():
 def dashboard():
     bid = current_user.business_id
     today = datetime.now(timezone.utc).date()
+    tomorrow = today + timedelta(days=1)
+    start_day = today - timedelta(days=6)
+    start_at = datetime.combine(start_day, time.min, tzinfo=timezone.utc)
+    today_at = datetime.combine(today, time.min, tzinfo=timezone.utc)
+    end_at = datetime.combine(tomorrow, time.min, tzinfo=timezone.utc)
     valid_sale = ~Sale.id.in_(db.session.query(SaleVoid.sale_id))
-    sales = db.session.query(func.coalesce(func.sum(Sale.total), 0)).filter(Sale.business_id == bid, func.date(Sale.created_at) == today, valid_sale).scalar()
-    count = Sale.query.filter(Sale.business_id == bid, valid_sale).count()
+
+    sales = db.session.query(func.coalesce(func.sum(Sale.total), 0)).filter(
+        Sale.business_id == bid, Sale.created_at >= today_at, Sale.created_at < end_at, valid_sale,
+    ).scalar()
+    count = Sale.query.filter(
+        Sale.business_id == bid, Sale.created_at >= today_at, Sale.created_at < end_at, valid_sale,
+    ).count()
     products = Product.query.filter_by(business_id=bid, active=True).order_by(Product.name).all()
     low_stock = [p for p in products if p.quantity <= p.low_stock_at]
-    expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(Expense.business_id == bid, func.date(Expense.created_at) == today).scalar()
-    recent = Sale.query.filter(Sale.business_id == bid, valid_sale).order_by(Sale.created_at.desc()).limit(8).all()
-    return render_template('dashboard.html', sales=sales, sale_count=count, products=products, low_stock=low_stock, expenses=expenses, recent=recent)
+    expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
+        Expense.business_id == bid, Expense.created_at >= today_at, Expense.created_at < end_at,
+    ).scalar()
+    recent = Sale.query.filter_by(business_id=bid).filter(
+        valid_sale
+    ).order_by(Sale.created_at.desc()).limit(8).all()
 
+    daily_sales = db.session.query(
+        func.date(Sale.created_at), func.coalesce(func.sum(Sale.total), 0)
+    ).filter(
+        Sale.business_id == bid, Sale.created_at >= start_at, Sale.created_at < end_at, valid_sale,
+    ).group_by(func.date(Sale.created_at)).all()
+    daily_map = {str(day)[:10]: float(total or 0) for day, total in daily_sales}
+    dashboard_chart = [
+        {'label': (start_day + timedelta(days=offset)).strftime('%d %b'),
+         'revenue': daily_map.get((start_day + timedelta(days=offset)).isoformat(), 0)}
+        for offset in range(7)
+    ]
+
+    product_rows = db.session.query(
+        SaleItem.product_name,
+        func.coalesce(func.sum(SaleItem.quantity), 0),
+        func.coalesce(func.sum(SaleItem.quantity * SaleItem.unit_price), 0),
+    ).join(Sale, Sale.id == SaleItem.sale_id).filter(
+        Sale.business_id == bid,
+        Sale.created_at >= datetime.combine(today - timedelta(days=29), time.min, tzinfo=timezone.utc),
+        Sale.created_at < end_at, valid_sale,
+    ).group_by(SaleItem.product_name).order_by(
+        func.sum(SaleItem.quantity).desc(), SaleItem.product_name
+    ).limit(5).all()
+    top_products = [
+        {'label': name, 'quantity': int(quantity or 0), 'revenue': float(revenue or 0)}
+        for name, quantity, revenue in product_rows
+    ]
+    return render_template(
+        'dashboard.html', sales=sales, sale_count=count, products=products,
+        low_stock=low_stock, expenses=expenses, recent=recent,
+        dashboard_chart=dashboard_chart, top_products=top_products,
+    )
 
 @bp.route('/products', methods=['GET', 'POST'])
 @login_required
@@ -309,50 +354,73 @@ def report_period():
 
 def report_data(start_at, end_at):
     bid = current_user.business_id
+    valid_sale = ~Sale.id.in_(db.session.query(SaleVoid.sale_id))
     sales_count, revenue = db.session.query(
-        func.count(Sale.id),
-        func.coalesce(func.sum(Sale.total), 0),
+        func.count(Sale.id), func.coalesce(func.sum(Sale.total), 0),
     ).filter(
-        Sale.business_id == bid,
-        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
-        Sale.created_at >= start_at,
-        Sale.created_at < end_at,
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
     ).one()
     cost = db.session.query(
         func.coalesce(func.sum(SaleItem.quantity * SaleItem.unit_cost), 0)
     ).join(Sale, Sale.id == SaleItem.sale_id).filter(
-        Sale.business_id == bid,
-        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
-        Sale.created_at >= start_at,
-        Sale.created_at < end_at,
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
     ).scalar()
-    expense_total = db.session.query(
-        func.coalesce(func.sum(Expense.amount), 0)
-    ).filter(
-        Expense.business_id == bid,
-        Expense.created_at >= start_at,
-        Expense.created_at < end_at,
+    expense_total = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
+        Expense.business_id == bid, Expense.created_at >= start_at, Expense.created_at < end_at,
     ).scalar()
     payment_rows = db.session.query(
-        Sale.payment_method,
-        func.count(Sale.id),
-        func.coalesce(func.sum(Sale.total), 0),
+        Sale.payment_method, func.count(Sale.id), func.coalesce(func.sum(Sale.total), 0),
     ).filter(
-        Sale.business_id == bid,
-        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
-        Sale.created_at >= start_at,
-        Sale.created_at < end_at,
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
     ).group_by(Sale.payment_method).order_by(Sale.payment_method).all()
     daily_rows = db.session.query(
-        func.date(Sale.created_at),
-        func.count(Sale.id),
-        func.coalesce(func.sum(Sale.total), 0),
+        func.date(Sale.created_at), func.count(Sale.id), func.coalesce(func.sum(Sale.total), 0),
     ).filter(
-        Sale.business_id == bid,
-        ~Sale.id.in_(db.session.query(SaleVoid.sale_id)),
-        Sale.created_at >= start_at,
-        Sale.created_at < end_at,
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
     ).group_by(func.date(Sale.created_at)).order_by(func.date(Sale.created_at)).all()
+
+    daily_revenue_rows = db.session.query(
+        func.date(Sale.created_at), func.coalesce(func.sum(Sale.total), 0),
+    ).filter(
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
+    ).group_by(func.date(Sale.created_at)).all()
+    daily_cost_rows = db.session.query(
+        func.date(Sale.created_at),
+        func.coalesce(func.sum(SaleItem.quantity * SaleItem.unit_cost), 0),
+    ).join(Sale, Sale.id == SaleItem.sale_id).filter(
+        Sale.business_id == bid, valid_sale,
+        Sale.created_at >= start_at, Sale.created_at < end_at,
+    ).group_by(func.date(Sale.created_at)).all()
+    daily_expense_rows = db.session.query(
+        func.date(Expense.created_at), func.coalesce(func.sum(Expense.amount), 0),
+    ).filter(
+        Expense.business_id == bid, Expense.created_at >= start_at, Expense.created_at < end_at,
+    ).group_by(func.date(Expense.created_at)).all()
+
+    revenue_map = {str(day)[:10]: float(value or 0) for day, value in daily_revenue_rows}
+    cost_map = {str(day)[:10]: float(value or 0) for day, value in daily_cost_rows}
+    expense_map = {str(day)[:10]: float(value or 0) for day, value in daily_expense_rows}
+    chart_rows = []
+    cursor = start_at.date()
+    last_day = end_at.date() - timedelta(days=1)
+    while cursor <= last_day:
+        key = cursor.isoformat()
+        day_revenue = revenue_map.get(key, 0.0)
+        day_cost = cost_map.get(key, 0.0)
+        day_expenses = expense_map.get(key, 0.0)
+        chart_rows.append({
+            'label': key, 'revenue': round(day_revenue, 2),
+            'gross_profit': round(day_revenue - day_cost, 2),
+            'expenses': round(day_expenses, 2),
+            'net_estimate': round(day_revenue - day_cost - day_expenses, 2),
+        })
+        cursor += timedelta(days=1)
+
     revenue = Decimal(str(revenue or 0))
     cost = Decimal(str(cost or 0))
     expense_total = Decimal(str(expense_total or 0))
@@ -366,8 +434,12 @@ def report_data(start_at, end_at):
         'net_estimate': gross_profit - expense_total,
         'payment_rows': payment_rows,
         'daily_rows': daily_rows,
+        'chart_rows': chart_rows,
+        'payment_chart': [
+            {'label': method.replace('_', ' ').title(), 'revenue': float(total or 0), 'transactions': int(count or 0)}
+            for method, count, total in payment_rows
+        ],
     }
-
 
 @bp.get('/reports')
 @login_required

@@ -376,3 +376,24 @@ def test_void_sale_requires_reason_and_cannot_cross_business(client, app):
         from scarz_pos.models import SaleVoid
         assert db.session.get(Product, other_product_id).quantity == 5
         assert SaleVoid.query.filter_by(sale_id=other_sale_id).count() == 0
+
+
+
+def test_dashboard_and_reports_render_analytics_charts_and_ignore_voided_sales(client, app):
+    register(client)
+    sale_id, product_id = _make_sale_for_void(client, app, sku='GRAPH-TEA')
+    client.post(f'/sales/{sale_id}/void', data={'reason': 'Graph exclusion check'}, follow_redirects=True)
+
+    dashboard = client.get('/dashboard')
+    assert dashboard.status_code == 200
+    assert b'data-chart="line"' in dashboard.data
+    assert b'data-chart="bars"' in dashboard.data
+    assert b'No sales to chart yet' in dashboard.data
+
+    reports = client.get('/reports')
+    assert reports.status_code == 200
+    assert b'Revenue & profitability trend' in reports.data
+    assert b'data-chart="line"' in reports.data
+    assert b'data-chart="bars"' in reports.data
+    assert b'0 completed transactions' in reports.data
+    assert b'No sales in this period' in reports.data
