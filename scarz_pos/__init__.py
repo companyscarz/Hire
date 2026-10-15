@@ -49,9 +49,18 @@ def create_app(test_config=None):
 
     @app.cli.command('init-db')
     def init_db_command():
-        """Bootstrap empty development/pilot databases. Use migrations for schema changes."""
+        """Create missing tables and apply the additive barcode schema update."""
         db.create_all()
-        print('ScarZ POS tables are present. This command does not alter existing tables.')
+        product_columns = {column['name'] for column in inspect(db.engine).get_columns('product')}
+        if 'barcode' not in product_columns:
+            db.session.execute(text('ALTER TABLE product ADD COLUMN barcode VARCHAR(80)'))
+            db.session.commit()
+        db.session.execute(text(
+            'CREATE UNIQUE INDEX IF NOT EXISTS uq_product_business_barcode '
+            'ON product (business_id, barcode)'
+        ))
+        db.session.commit()
+        print('ScarZ POS tables are present; barcode schema is ready.')
 
     @app.get('/health/live')
     def health_live():
