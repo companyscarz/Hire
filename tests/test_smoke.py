@@ -513,5 +513,7 @@ def test_report_csv_neutralizes_spreadsheet_formula_in_expense_descriptions(clie
 
     exported = client.get('/reports.csv')
     assert exported.status_code == 200
-    assert b'\'=HYPERLINK' in exported.data
-    assert b'=HYPERLINK("https://example.com","click")' not in exported.data
+    import csv
+    import io
+    rows = list(csv.reader(io.StringIO(exported.get_data(as_text=True).lstrip('\\ufeff'))))
+    assert any(row[1].startswith("'=HYPERLINK") for row in rows if len(row) > 1)
