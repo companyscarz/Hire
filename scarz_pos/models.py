@@ -55,6 +55,7 @@ class Product(db.Model):
     business_id = db.Column(db.Integer, db.ForeignKey('business.id', ondelete='CASCADE'), nullable=False, index=True)
     name = db.Column(db.String(160), nullable=False)
     sku = db.Column(db.String(80))
+    barcode = db.Column(db.String(80))
     category = db.Column(db.String(80), nullable=False, default='General')
     cost_price = db.Column(db.Numeric(14, 2), nullable=False, default=0)
     selling_price = db.Column(db.Numeric(14, 2), nullable=False)
@@ -62,7 +63,7 @@ class Product(db.Model):
     low_stock_at = db.Column(db.Integer, nullable=False, default=5)
     active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
-    __table_args__ = (db.UniqueConstraint('business_id', 'sku', name='uq_product_business_sku'), db.CheckConstraint('cost_price >= 0 AND selling_price >= 0 AND quantity >= 0', name='ck_product_nonnegative'))
+    __table_args__ = (db.UniqueConstraint('business_id', 'sku', name='uq_product_business_sku'), db.Index('uq_product_business_barcode', 'business_id', 'barcode', unique=True), db.CheckConstraint('cost_price >= 0 AND selling_price >= 0 AND quantity >= 0', name='ck_product_nonnegative'))
 
 
 class Sale(db.Model):
