@@ -102,14 +102,15 @@ def products():
         try:
             name = request.form.get('name', '').strip()
             sku = request.form.get('sku', '').strip() or None
+            barcode = request.form.get('barcode', '').strip() or None
             category = request.form.get('category', '').strip() or 'General'
             cost = money(request.form.get('cost_price', '0'))
             price = money(request.form.get('selling_price', ''))
             quantity = int(request.form.get('quantity', '0'))
             low_stock = int(request.form.get('low_stock_at', '5'))
-            if not name or len(name) > 160 or quantity < 0 or low_stock < 0:
-                raise ValueError('Check the product name and stock quantities.')
-            product = Product(business_id=current_user.business_id, name=name, sku=sku, category=category[:80], cost_price=cost, selling_price=price, quantity=quantity, low_stock_at=low_stock)
+            if not name or len(name) > 160 or quantity < 0 or low_stock < 0 or (barcode and len(barcode) > 80):
+                raise ValueError('Check the product name, barcode and stock quantities.')
+            product = Product(business_id=current_user.business_id, name=name, sku=sku, barcode=barcode, category=category[:80], cost_price=cost, selling_price=price, quantity=quantity, low_stock_at=low_stock)
             db.session.add(product)
             db.session.flush()
             if quantity > 0:
@@ -127,7 +128,7 @@ def products():
             return redirect(url_for('views.products'))
         except (ValueError, InvalidOperation, IntegrityError):
             db.session.rollback()
-            flash('Please check the product details. SKU must be unique within your business.', 'error')
+            flash('Please check the product details. SKU and barcode must each be unique within your business.', 'error')
     items = Product.query.filter_by(business_id=current_user.business_id).order_by(Product.name).all()
     return render_template('products.html', products=items)
 
