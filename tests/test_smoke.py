@@ -442,3 +442,39 @@ def test_product_barcode_is_saved_and_unique_within_business(client, app):
     with app.app_context():
         assert Product.query.filter_by(barcode='0123456789012').count() == 1
         assert db.session.get(Product, product_id).quantity == 10
+
+
+def test_phone_scanner_pairing_sends_barcode_to_own_checkout(client, app):
+    register(client, 'phone-owner@example.com', 'Phone Shop')
+    paired = client.post('/scanner/pair')
+    assert paired.status_code == 200
+    payload = paired.get_json()
+    assert payload['token']
+    assert payload['expires_in'] == 1200
+    phone_page = client.get('/scanner/phone/' + payload['token'])
+    assert phone_page.status_code == 200
+    assert b'Phone barcode scanner' in phone_page.data
+
+    sent = client.post('/scanner/phone/' + payload['token'] + '/code', json={'code': '5012345678900'})
+    assert sent.status_code == 200
+    received = client.get('/scanner/pair/' + payload['token'] + '/next')
+    assert received.status_code == 200
+    assert received.get_json()['code'] == '5012345678900'
+    empty = client.get('/scanner/pair/' + payload['token'] + '/next')
+    assert empty.status_code == 200
+    assert empty.get_json()['code'] is None
+
+
+def test_phone_scanner_pairing_is_scoped_to_business(client, app):
+    register(client, 'scanner-first@example.com', 'First Shop')
+    token = client.post('/scanner/pair').get_json()['token']
+    second_client = app.test_client()
+    register(second_client, 'scanner-second@example.com', 'Second Shop')
+    assert second_client.get('/scanner/pair/' + token + '/next').status_code == 404
+
+
+def test_phone_scanner_rejects_invalid_barcode(client, app):
+    register(client, 'scanner-validation@example.com', 'Scanner Validation Shop')
+    token = client.post('/scanner/pair').get_json()['token']
+    assert client.post('/scanner/phone/' + token + '/code', json={'code': ''}).status_code == 400
+    assert client.post('/scanner/phone/' + token + '/code', json={'code': 'x' * 81}).status_code == 400
