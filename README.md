@@ -22,12 +22,22 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 - Trial expiry is enforced for inventory creation, checkout and expense creation. Subscription payment initiation and webhook handling are implemented on this branch, but live provider verification and production tests are still pending. Configure plan prices before offering checkout. Configure Nylon Pay's webhook URL as `https://YOUR-DOMAIN/webhooks/nylonpay/subscriptions`.
 
 ## Local setup
-1. Install Python 3.12+ and PostgreSQL.
-2. Create a database and copy `.env.example` to `.env`.
-3. `python -m venv .venv` then activate it.
-4. `pip install -r requirements.txt`
-5. `flask --app 'scarz_pos:create_app()' init-db`
-6. `flask --app 'scarz_pos:create_app()' run --debug`
+1. Install Python 3.12+ and PostgreSQL (or use SQLite by removing `DATABASE_URL` from `.env`).
+2. Copy `.env.example` to `.env` and configure a **local development database**. Do not point local testing at production.
+3. In PowerShell, create and activate the virtual environment:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
+4. Start the app:
+   ```powershell
+   python run.py
+   ```
+5. Open `http://127.0.0.1:5000`. The local entry point runs the existing additive `init-db` bootstrap before starting the server.
+6. Stop the server with `Ctrl+C`.
+
+The local entry point refuses to start if `DATABASE_URL` points to a remote PostgreSQL host, unless `ALLOW_REMOTE_DATABASE=1` is explicitly set. Do not set that override for ordinary local testing. Production deployments should continue to use the Gunicorn/Nixpacks command rather than Flask's development server.
 
 ## Environment
 - `SECRET_KEY`: required in production; long random secret.
