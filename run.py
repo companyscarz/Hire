@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "production",
         "prod",
     }
-    port = int(os.getenv("PORT", "5000"))
+    port = int(os.getenv("LOCAL_PORT", "5000"))
 
     # Never expose Flask's interactive debugger on a non-loopback interface.
     debug = not production and host in {"127.0.0.1", "localhost", "::1"}
