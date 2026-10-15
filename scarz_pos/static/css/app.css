@@ -7,3 +7,39 @@
 /* Lightweight barcode entry and native-camera scanner */
 .barcode-entry{display:flex;align-items:stretch;gap:8px}.barcode-entry input{min-width:0;flex:1}.barcode-entry .scan-button{margin-top:7px;min-height:43px;padding:9px 12px}.product-search-row{display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,1fr);align-items:end;gap:16px;margin-bottom:12px}.product-search-row label{margin:0}.product-search-row p{font-size:12px;margin:0 0 12px}.scanner-dialog{border:1px solid var(--line);border-radius:18px;padding:0;width:min(94vw,520px);max-width:520px;box-shadow:0 24px 90px #0a162855}.scanner-dialog::backdrop{background:#081326b8;backdrop-filter:blur(3px)}.scanner-dialog-inner{padding:22px}.scanner-dialog video{display:block;width:100%;max-height:58vh;min-height:180px;object-fit:cover;background:#0a1628;border-radius:12px}.scanner-dialog .panel-heading{margin-bottom:14px}.scanner-dialog .panel-heading h2{margin:0}.scanner-dialog p{font-size:13px;line-height:1.6}.scanner-dialog .full{width:100%}[data-product-row][hidden]{display:none}.scanner-help{font-size:12px;margin:0 0 12px}
 @media(max-width:720px){.product-search-row{grid-template-columns:1fr;gap:4px}.product-search-row p{margin:0 0 12px}.scanner-dialog-inner{padding:16px}.inventory-grid{grid-template-columns:1fr}}
+
+
+/* Persistent light/dark theme. Keep semantic colors centralized for readable POS screens. */
+:root{color-scheme:light;--surface:#fff;--surface-soft:#f8fafc;--field:#fff;--text-muted:#718096;--border:var(--line)}
+:root[data-theme="dark"]{color-scheme:dark;--paper:#0c1422;--ink:#e8edf5;--muted:#a7b4c8;--line:#26364b;--white:#111d2e;--green:#4ade80;--red:#f87171;--surface:#111d2e;--surface-soft:#17263a;--field:#0d192a;--border:#2b3b51}
+:root[data-theme="dark"] body{background:var(--paper);color:var(--ink)}
+:root[data-theme="dark"] a{color:#91baff}
+:root[data-theme="dark"] .topbar{background:#070e19;border-bottom:1px solid #26364b}
+:root[data-theme="dark"] .feature,:root[data-theme="dark"] .panel,:root[data-theme="dark"] .stat,:root[data-theme="dark"] .auth-card,:root[data-theme="dark"] .receipt{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:0 8px 30px #0002}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background:var(--field);color:var(--ink);border-color:var(--line)}
+:root[data-theme="dark"] label{color:#c4cede}
+:root[data-theme="dark"] td,:root[data-theme="dark"] th{border-bottom-color:#26364b}
+:root[data-theme="dark"] th,:root[data-theme="dark"] .bar-chart-label{color:#a7b4c8}
+:root[data-theme="dark"] .bar-chart-track,:root[data-theme="dark"] .pill{background:#223249;color:#d4deed}
+:root[data-theme="dark"] footer{background:#080f1b;border-color:#26364b;color:#9aa9bd}
+:root[data-theme="dark"] .secondary{background:#17263a;color:#edf3fb;border-color:#33445b}
+:root[data-theme="dark"] .alert.success{background:#103b2b;color:#9ce8bf}
+:root[data-theme="dark"] .alert.error{background:#421f24;color:#ffb4b4}
+:root[data-theme="dark"] .alert.info{background:#1a2e50;color:#c4d9ff}
+:root[data-theme="dark"] .trial-banner{background:#352a17;border-color:#5e4824}
+:root[data-theme="dark"] .trial-banner p,:root[data-theme="dark"] .trial-banner>span{color:#f4d69a}
+:root[data-theme="dark"] .report-net{background:#123727;color:#9ce8bf}
+:root[data-theme="dark"] .report-net.negative{background:#421f24;color:#ffb4b4}
+:root[data-theme="dark"] .chart-grid{stroke:#2b3b51}
+:root[data-theme="dark"] .chart-axis{fill:#a7b4c8}
+:root[data-theme="dark"] .chart-point{stroke:#111d2e}
+:root[data-theme="dark"] .feature-icon{background:#382d18;color:#f4c96f}
+:root[data-theme="dark"] .stock-count{background:#123727;color:#9ce8bf}
+:root[data-theme="dark"] .stock-count.warning{background:#3b2b14;color:#f7d18a}
+.theme-toggle,.install-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:8px 11px;border:1px solid #ffffff35;border-radius:9px;background:#ffffff12;color:#f3f6fb;font:700 12px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.theme-toggle:hover,.install-button:hover{background:#ffffff22}
+.theme-toggle:focus-visible,.install-button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.install-button{background:var(--amber);color:var(--navy);border-color:var(--amber)}
+.install-button[hidden]{display:none}
+@media(max-width:560px){.theme-toggle,.install-button{min-height:34px;padding:7px 9px}.theme-toggle-label{display:inline}}
+@media(prefers-reduced-motion:no-preference){body{transition:background-color .16s ease,color .16s ease}}
