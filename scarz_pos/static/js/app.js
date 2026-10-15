@@ -138,35 +138,18 @@ document.addEventListener('DOMContentLoaded',()=>{
       video.muted=true;
       await video.play();
       scanning=true;
-      if(window.BarcodeDetector){
-        setCameraStatus('Camera is on. Hold the barcode steady in view…');
-        let detector=null;
+      // Use ZXing for consistent desktop decoding, even when a partial native
+      // BarcodeDetector implementation exists in the browser.
+      const track=stream.getVideoTracks()[0];
+      if(track?.applyConstraints){
         try{
-          const availableFormats=await BarcodeDetector.getSupportedFormats();
-          const formats=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'].filter(format=>availableFormats.includes(format));
-          if(formats.length)detector=new BarcodeDetector({formats});
+          const capabilities=track.getCapabilities?.()||{};
+          const advanced=[];
+          if(capabilities.focusMode?.includes('continuous'))advanced.push({focusMode:'continuous'});
+          if(advanced.length)await track.applyConstraints({advanced});
         }catch(_error){}
-        if(detector){
-          const scanFrame=async()=>{
-            if(!scanning||thisScan!==scanToken)return;
-            try{
-              const codes=await detector.detect(video);
-              const found=codes.find(code=>code.rawValue)?.rawValue;
-              if(found){deliverBarcode(target,found);return;}
-            }catch(_error){
-              setCameraStatus('Camera is on, but native decoding failed. Trying the compatibility scanner…');
-              try{await runZXingFallback(target,thisScan);return;}catch(_fallbackError){}
-              stopCamera();
-              setCameraStatus('The camera is running but could not decode this barcode. Improve lighting or type it manually.');
-              return;
-            }
-            frame=requestAnimationFrame(scanFrame);
-          };
-          frame=requestAnimationFrame(scanFrame);
-          return;
-        }
       }
-      setCameraStatus('Camera is on. Loading the compatibility barcode decoder…');
+      setCameraStatus('Camera is on. Preparing the compatibility decoder…');
       await runZXingFallback(target,thisScan);
     }catch(error){
       stopCamera();
@@ -189,9 +172,26 @@ document.addEventListener('DOMContentLoaded',()=>{
       await loadScript('https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js');
       if(thisScan!==scanToken||!scanning)return;
       if(!window.ZXing?.BrowserMultiFormatReader)throw new Error('Barcode decoder is unavailable.');
-      const reader=new window.ZXing.BrowserMultiFormatReader();
+      const hints=new Map();
+      const formats=[
+        window.ZXing.BarcodeFormat.EAN_13,
+        window.ZXing.BarcodeFormat.EAN_8,
+        window.ZXing.BarcodeFormat.UPC_A,
+        window.ZXing.BarcodeFormat.UPC_E,
+        window.ZXing.BarcodeFormat.CODE_128,
+        window.ZXing.BarcodeFormat.CODE_39,
+        window.ZXing.BarcodeFormat.ITF,
+        window.ZXing.BarcodeFormat.CODABAR
+      ].filter(format=>format!==undefined);
+      if(window.ZXing.DecodeHintType?.POSSIBLE_FORMATS&&formats.length){
+        hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
+      }
+      if(window.ZXing.DecodeHintType?.TRY_HARDER){
+        hints.set(window.ZXing.DecodeHintType.TRY_HARDER,true);
+      }
+      const reader=new window.ZXing.BrowserMultiFormatReader(hints,250);
       zxingReader=reader;
-      setCameraStatus('Camera is on. ZXing compatibility scanning is active — hold the barcode steady in view…');
+      setCameraStatus('Camera is on. Enhanced barcode scanning is active. Center the barcode, keep it steady, and move it closer if needed…');
       reader.decodeFromVideoElementContinuously(video,(result,_error)=>{
         if(thisScan!==scanToken||!scanning)return;
         if(result?.getText)deliverBarcode(target,result.getText());
