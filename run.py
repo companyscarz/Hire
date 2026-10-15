@@ -32,7 +32,6 @@ if parsed_database_url.scheme.startswith("postgresql"):
         raise SystemExit(2)
 
 from scarz_pos import create_app  # noqa: E402
-from scarz_pos.extensions import db  # noqa: E402
 
 app = create_app()
 
@@ -40,7 +39,7 @@ app = create_app()
 def initialize_local_database():
     """Run the project's additive bootstrap for a local development database."""
     with app.app_context():
-        app.cli.commands["init-db"]()
+        app.cli.commands["init-db"].callback()
 
 
 if __name__ == "__main__":
