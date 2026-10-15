@@ -471,9 +471,29 @@ def test_phone_scanner_pairing_sends_barcode_to_own_checkout(client, app):
 def test_phone_scanner_pairing_is_scoped_to_business(client, app):
     register(client, 'scanner-first@example.com', 'First Shop')
     token = client.post('/scanner/pair').get_json()['token']
+
+    # Create a genuinely separate tenant and explicitly authenticate that user.
+    # Using the register helper here made this test dependent on registration's
+    # redirect/session behavior rather than isolating the tenant authorization.
+    with app.app_context():
+        business = Business(name='Second Shop')
+        other_user = User(
+            business=business,
+            full_name='Second Owner',
+            email='scanner-second@example.com',
+        )
+        other_user.set_password('very-long-password')
+        db.session.add_all([business, other_user])
+        db.session.commit()
+        other_user_id = other_user.id
+
     second_client = app.test_client()
-    register(second_client, 'scanner-second@example.com', 'Second Shop')
-    assert second_client.get('/scanner/pair/' + token + '/next').status_code == 404
+    with second_client.session_transaction() as session:
+        session['_user_id'] = str(other_user_id)
+        session['_fresh'] = True
+
+    response = second_client.get('/scanner/pair/' + token + '/next')
+    assert response.status_code == 404
 
 
 def test_phone_scanner_rejects_invalid_barcode(client, app):
