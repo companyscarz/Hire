@@ -20,9 +20,17 @@ app = create_app()
 
 
 def initialize_database():
-    """Run the app's existing database bootstrap against configured DATABASE_URL."""
-    with app.app_context():
-        app.cli.commands["init-db"].callback()
+    """Run the registered init-db command with a proper Flask CLI context."""
+    result = app.test_cli_runner().invoke(args=["init-db"])
+    if result.exception is not None:
+        raise result.exception
+    if result.exit_code != 0:
+        raise RuntimeError(
+            "The init-db command failed: "
+            + (result.output.strip() or f"exit code {result.exit_code}")
+        )
+    if result.output:
+        print(result.output, end="" if result.output.endswith("\\n") else "\\n")
 
 
 if __name__ == "__main__":
