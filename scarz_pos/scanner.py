@@ -73,8 +73,13 @@ def receive_phone_code(token):
 @bp.get("/pair/<token>/next")
 @login_required
 def next_phone_code(token):
-    pairing = get_active_pairing(token)
-    if pairing.business_id != current_user.business_id:
+    # Scope the lookup itself to the authenticated business. Do not fetch a
+    # token globally and then rely only on a post-query comparison.
+    pairing = PhoneScannerSession.query.filter_by(
+        token=token,
+        business_id=current_user.business_id,
+    ).first()
+    if pairing is None or ensure_utc(pairing.expires_at) <= utcnow():
         abort(404)
     queue = list(pairing.pending_codes or [])
     if queue:
