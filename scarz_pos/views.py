@@ -20,6 +20,14 @@ def money(value):
         raise ValueError('Enter a valid non-negative amount.')
 
 
+def csv_safe_text(value):
+    """Prevent spreadsheet formula execution when user-controlled text is exported."""
+    text_value = str(value or "")
+    if text_value.lstrip(" \\t\\r\\n").startswith(("=", "+", "-", "@")):
+        return "'" + text_value
+    return text_value
+
+
 def require_active_subscription():
     business = current_user.business
     if not business.subscription_active:
@@ -494,7 +502,7 @@ def reports_csv():
         Expense.created_at < end_at,
     ).order_by(Expense.created_at.desc()).all()
     for expense in expenses:
-        writer.writerow([expense.created_at.isoformat(), expense.description, expense.amount])
+        writer.writerow([expense.created_at.isoformat(), csv_safe_text(expense.description), expense.amount])
     return Response(
         '\ufeff' + output.getvalue(),
         mimetype='text/csv',
