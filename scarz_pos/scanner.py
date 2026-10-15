@@ -3,10 +3,8 @@ from datetime import timedelta
 
 from flask import Blueprint, abort, jsonify, render_template, request
 from flask_login import current_user, login_required
-from sqlalchemy.exc import IntegrityError
-
 from .extensions import db
-from .models import utcnow
+from .models import ensure_utc, utcnow
 
 bp = Blueprint("scanner", __name__, url_prefix="/scanner")
 
@@ -43,7 +41,7 @@ def create_pairing():
 
 def get_active_pairing(token):
     pairing = PhoneScannerSession.query.filter_by(token=token).first()
-    if pairing is None or pairing.expires_at <= utcnow():
+    if pairing is None or ensure_utc(pairing.expires_at) <= utcnow():
         abort(404)
     return pairing
 
