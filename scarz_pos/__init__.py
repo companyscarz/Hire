@@ -43,9 +43,11 @@ def create_app(test_config=None):
     from .auth import bp as auth_bp
     from .views import bp as views_bp
     from .billing import bp as billing_bp
+    from .scanner import bp as scanner_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(billing_bp)
+    app.register_blueprint(scanner_bp)
 
     @app.cli.command('init-db')
     def init_db_command():
