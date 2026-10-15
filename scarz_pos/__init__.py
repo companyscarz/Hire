@@ -3,7 +3,7 @@ from datetime import timedelta
 from flask import Flask, render_template
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from .extensions import db, login_manager
 
 migrate = Migrate()
