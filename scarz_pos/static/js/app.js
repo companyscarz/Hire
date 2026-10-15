@@ -45,7 +45,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!search)return false;
     const wanted=String(code||'').trim();
     if(!wanted)return false;
-    const row=rows.find(item=>item.dataset.productBarcode===wanted||item.dataset.productSku===wanted);
+    const codeMatch=rows.find(item=>item.dataset.productBarcode===wanted||item.dataset.productSku===wanted);
+    const exactNameMatches=rows.filter(item=>normalise(item.dataset.productName)===normalise(wanted));
+    const row=codeMatch||(exactNameMatches.length===1?exactNameMatches[0]:null);
     if(!row)return false;
     const qty=row.querySelector('.qty-input');
     const available=Number.parseInt(qty?.max||'0',10)||0;
