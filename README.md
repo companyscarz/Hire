@@ -22,8 +22,8 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 - Trial expiry is enforced for inventory creation, checkout and expense creation. Subscription payment initiation and webhook handling are implemented on this branch, but live provider verification and production tests are still pending. Configure plan prices before offering checkout. Configure Nylon Pay's webhook URL as `https://YOUR-DOMAIN/webhooks/nylonpay/subscriptions`.
 
 ## Local setup
-1. Install Python 3.12+ and PostgreSQL (or use SQLite by removing `DATABASE_URL` from `.env`).
-2. Copy `.env.example` to `.env` and configure a **local development database**. Do not point local testing at production.
+1. Install Python 3.12+.
+2. Copy `.env.example` to `.env` and set `DATABASE_URL` to the PostgreSQL database you intend to use. A remote hosted database is supported; remember that local actions will affect that database. SQLite can be used for isolated testing by removing `DATABASE_URL` from `.env`.
 3. In PowerShell, create and activate the virtual environment:
    ```powershell
    python -m venv .venv
