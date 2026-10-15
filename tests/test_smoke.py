@@ -455,11 +455,14 @@ def test_phone_scanner_pairing_sends_barcode_to_own_checkout(client, app):
     assert phone_page.status_code == 200
     assert b'Phone barcode scanner' in phone_page.data
 
-    sent = client.post('/scanner/phone/' + payload['token'] + '/code', json={'code': '5012345678900'})
-    assert sent.status_code == 200
-    received = client.get('/scanner/pair/' + payload['token'] + '/next')
-    assert received.status_code == 200
-    assert received.get_json()['code'] == '5012345678900'
+    first_sent = client.post('/scanner/phone/' + payload['token'] + '/code', json={'code': '5012345678900'})
+    second_sent = client.post('/scanner/phone/' + payload['token'] + '/code', json={'code': '4006381333931'})
+    assert first_sent.status_code == second_sent.status_code == 200
+    first_received = client.get('/scanner/pair/' + payload['token'] + '/next')
+    second_received = client.get('/scanner/pair/' + payload['token'] + '/next')
+    assert first_received.status_code == second_received.status_code == 200
+    assert first_received.get_json()['code'] == '5012345678900'
+    assert second_received.get_json()['code'] == '4006381333931'
     empty = client.get('/scanner/pair/' + payload['token'] + '/next')
     assert empty.status_code == 200
     assert empty.get_json()['code'] is None
