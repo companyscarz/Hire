@@ -411,3 +411,34 @@ def test_dashboard_and_reports_render_analytics_charts_and_ignore_voided_sales(c
     report_rows = json.loads(html.unescape(report_match.group(1).decode()))
     assert sum(row['revenue'] for row in report_rows) == 3.5
     assert sum(row['gross_profit'] for row in report_rows) == 1.5
+
+
+def test_product_barcode_is_saved_and_unique_within_business(client, app):
+    register(client)
+    first = client.post('/products', data={
+        'name': 'Barcode tea', 'sku': 'BAR-TEA-1', 'barcode': '0123456789012',
+        'category': 'Groceries', 'cost_price': '2.00', 'selling_price': '3.50',
+        'quantity': '10', 'low_stock_at': '2'
+    }, follow_redirects=True)
+    assert first.status_code == 200
+    with app.app_context():
+        product = Product.query.filter_by(barcode='0123456789012').one()
+        assert product.sku == 'BAR-TEA-1'
+        product_id = product.id
+
+    checkout = client.get('/checkout')
+    assert checkout.status_code == 200
+    assert b'id="product-search"' in checkout.data
+    assert b'data-product-barcode="0123456789012"' in checkout.data
+    assert b'data-barcode-scanner' in checkout.data
+
+    duplicate = client.post('/products', data={
+        'name': 'Duplicate barcode item', 'sku': 'BAR-TEA-2', 'barcode': '0123456789012',
+        'category': 'Groceries', 'cost_price': '1.00', 'selling_price': '2.00',
+        'quantity': '3', 'low_stock_at': '1'
+    }, follow_redirects=True)
+    assert duplicate.status_code == 200
+    assert b'barcode must each be unique' in duplicate.data
+    with app.app_context():
+        assert Product.query.filter_by(barcode='0123456789012').count() == 1
+        assert db.session.get(Product, product_id).quantity == 10
