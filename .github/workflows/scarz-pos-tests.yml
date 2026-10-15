@@ -30,4 +30,4 @@ jobs:
         env:
           SECRET_KEY: test-only-secret
           APP_ENV: test
-        run: pytest -q
+        run: python -m pytest -q
