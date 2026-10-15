@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const dialog=document.getElementById('barcode-camera-dialog');
   const video=document.getElementById('barcode-camera-video');
   const cameraStatus=document.getElementById('barcode-camera-status');
-  let stream=null, frame=0, scanning=false, zxingControls=null, scanToken=0;
+  let stream=null, frame=0, scanning=false, zxingReader=null, scanToken=0;
   const normalise=value=>String(value||'').trim().toLocaleLowerCase();
   const filterRows=()=>{
     if(!search)return;
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     scanToken++;
     if(frame)cancelAnimationFrame(frame);
     frame=0;
-    if(zxingControls){try{zxingControls.stop();}catch(_error){} zxingControls=null;}
+    if(zxingReader){try{zxingReader.stopContinuousDecode();}catch(_error){} zxingReader=null;}
     if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
     if(video){video.pause();video.srcObject=null;}
   };
@@ -190,13 +190,16 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(thisScan!==scanToken||!scanning)return;
       if(!window.ZXing?.BrowserMultiFormatReader)throw new Error('Barcode decoder is unavailable.');
       const reader=new window.ZXing.BrowserMultiFormatReader();
+      zxingReader=reader;
       setCameraStatus('Camera is on. ZXing compatibility scanning is active — hold the barcode steady in view…');
-      zxingControls=await reader.decodeFromVideoElement(video,(result,_error,controls)=>{
+      reader.decodeFromVideoElementContinuously(video,(result,_error)=>{
         if(thisScan!==scanToken||!scanning)return;
-        if(controls)zxingControls=controls;
         if(result?.getText)deliverBarcode(target,result.getText());
+      }).catch(()=>{
+        if(thisScan!==scanToken)return;
+        stopCamera();
+        setCameraStatus('The camera is on, but the decoder could not process the video. Try better lighting or enter the barcode manually.');
       });
-      if(thisScan!==scanToken&&zxingControls){zxingControls.stop();zxingControls=null;}
     }catch(_error){
       if(thisScan!==scanToken)return;
       stopCamera();
