@@ -16,6 +16,7 @@ class PhoneScannerSession(db.Model):
     token = db.Column(db.String(96), nullable=False, unique=True, index=True)
     expires_at = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
     last_code = db.Column(db.String(80))
+    pending_codes = db.Column(db.JSON, nullable=False, default=list)
     code_sequence = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
@@ -59,8 +60,11 @@ def receive_phone_code(token):
     code = str(payload.get("code", "")).strip()
     if not code or len(code) > 80 or not code.isprintable():
         return jsonify({"error": "Invalid barcode."}), 400
-    pairing.last_code = code
     pairing.code_sequence += 1
+    queue = list(pairing.pending_codes or [])
+    queue.append({"code": code, "sequence": pairing.code_sequence})
+    pairing.pending_codes = queue
+    pairing.last_code = code
     pairing.updated_at = utcnow()
     db.session.commit()
     return jsonify({"ok": True, "sequence": pairing.code_sequence})
@@ -72,9 +76,11 @@ def next_phone_code(token):
     pairing = get_active_pairing(token)
     if pairing.business_id != current_user.business_id:
         abort(404)
-    code = pairing.last_code
-    sequence = pairing.code_sequence
-    if code:
-        pairing.last_code = None
+    queue = list(pairing.pending_codes or [])
+    if queue:
+        event = queue.pop(0)
+        pairing.pending_codes = queue
+        pairing.last_code = queue[-1]["code"] if queue else None
         db.session.commit()
-    return jsonify({"code": code, "sequence": sequence})
+        return jsonify(event)
+    return jsonify({"code": None, "sequence": pairing.code_sequence})
