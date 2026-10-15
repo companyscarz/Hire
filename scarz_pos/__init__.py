@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from flask import Flask, render_template
+from flask import Flask, make_response, render_template, send_from_directory
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import inspect, text
@@ -69,6 +69,13 @@ def create_app(test_config=None):
             db.session.commit()
         db.session.commit()
         print('ScarZ POS tables are present; barcode and wireless-scanner schemas are ready.')
+
+    @app.get('/sw.js')
+    def service_worker():
+        response = make_response(send_from_directory(app.static_folder, 'sw.js'))
+        response.headers['Service-Worker-Allowed'] = '/'
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
 
     @app.get('/health/live')
     def health_live():
