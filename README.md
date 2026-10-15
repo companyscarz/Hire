@@ -37,7 +37,7 @@ ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory appl
 5. Open `http://127.0.0.1:5000`. The local entry point runs the existing additive `init-db` bootstrap before starting the server.
 6. Stop the server with `Ctrl+C`.
 
-The local entry point refuses to start if `DATABASE_URL` points to a remote PostgreSQL host, unless `ALLOW_REMOTE_DATABASE=1` is explicitly set. Do not set that override for ordinary local testing. Production deployments should continue to use the Gunicorn/Nixpacks command rather than Flask's development server.
+The local entry point uses the `DATABASE_URL` configured in `.env`, including a remote PostgreSQL database if that is your setup. **Use caution:** the app will read and write to that database, and the startup bootstrap may create missing tables and apply its additive barcode/scanner schema updates. Sales, inventory changes, and voids performed locally will affect that same database. Use a dedicated test database/business for testing whenever possible. Production deployments should continue to use the Gunicorn/Nixpacks command rather than Flask's development server.
 
 ## Environment
 - `SECRET_KEY`: required in production; long random secret.
