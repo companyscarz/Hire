@@ -23,7 +23,7 @@ def money(value):
 def csv_safe_text(value):
     """Prevent spreadsheet formula execution when user-controlled text is exported."""
     text_value = str(value or "")
-    if text_value.lstrip(" \\t\\r\\n").startswith(("=", "+", "-", "@")):
+    if text_value.lstrip(" \t\r\n").startswith(("=", "+", "-", "@")):
         return "'" + text_value
     return text_value
 
