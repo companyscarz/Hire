@@ -380,20 +380,34 @@ def test_void_sale_requires_reason_and_cannot_cross_business(client, app):
 
 
 def test_dashboard_and_reports_render_analytics_charts_and_ignore_voided_sales(client, app):
+    import html
+    import json
+    import re
+
     register(client)
     sale_id, product_id = _make_sale_for_void(client, app, sku='GRAPH-TEA')
     client.post(f'/sales/{sale_id}/void', data={'reason': 'Graph exclusion check'}, follow_redirects=True)
+
+    # Keep one completed sale so the graph proves it excludes only the voided transaction.
+    client.post('/checkout', data={f'qty_{product_id}': '1', 'payment_method': 'cash'}, follow_redirects=True)
 
     dashboard = client.get('/dashboard')
     assert dashboard.status_code == 200
     assert b'data-chart="line"' in dashboard.data
     assert b'data-chart="bars"' in dashboard.data
-    assert b'No sales to chart yet' in dashboard.data
+    dashboard_match = re.search(rb'data-chart="line"[^>]*data-chart-data="([^"]+)"', dashboard.data)
+    assert dashboard_match
+    dashboard_rows = json.loads(html.unescape(dashboard_match.group(1).decode()))
+    assert sum(row['revenue'] for row in dashboard_rows) == 3.5
 
     reports = client.get('/reports')
     assert reports.status_code == 200
     assert b'Revenue & profitability trend' in reports.data
     assert b'data-chart="line"' in reports.data
     assert b'data-chart="bars"' in reports.data
-    assert b'0 completed transactions' in reports.data
-    assert b'No sales in this period' in reports.data
+    assert b'1 completed transactions' in reports.data
+    report_match = re.search(rb'data-chart="line"[^>]*data-chart-data="([^"]+)"', reports.data)
+    assert report_match
+    report_rows = json.loads(html.unescape(report_match.group(1).decode()))
+    assert sum(row['revenue'] for row in report_rows) == 3.5
+    assert sum(row['gross_profit'] for row in report_rows) == 1.5
