@@ -30,7 +30,9 @@ def initialize_database():
             + (result.output.strip() or f"exit code {result.exit_code}")
         )
     if result.output:
-        print(result.output, end="" if result.output.endswith("\\n") else "\\n")
+        print(result.output, end="")
+        if not result.output.endswith("\\n"):
+            print()
 
 
 if __name__ == "__main__":
