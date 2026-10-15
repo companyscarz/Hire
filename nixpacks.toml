@@ -4,5 +4,5 @@ providers = ["python"]
 NIXPACKS_PYTHON_VERSION = "3.12"
 
 [start]
-# Bootstrap empty MVP database; later schema changes must use checked-in migrations.
+# Bootstrap tables and apply the safe additive barcode schema update before Gunicorn.
 cmd = "flask --app 'scarz_pos:create_app()' init-db && gunicorn --bind 0.0.0.0:${PORT:-8000} 'scarz_pos:create_app()' --workers ${WEB_CONCURRENCY:-2} --timeout 60"
