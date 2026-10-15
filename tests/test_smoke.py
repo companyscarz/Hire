@@ -501,3 +501,17 @@ def test_phone_scanner_rejects_invalid_barcode(client, app):
     token = client.post('/scanner/pair').get_json()['token']
     assert client.post('/scanner/phone/' + token + '/code', json={'code': ''}).status_code == 400
     assert client.post('/scanner/phone/' + token + '/code', json={'code': 'x' * 81}).status_code == 400
+
+
+def test_report_csv_neutralizes_spreadsheet_formula_in_expense_descriptions(client):
+    register(client, 'csv-safety@example.com', 'CSV Safety Shop')
+    response = client.post('/expenses', data={
+        'description': '=HYPERLINK("https://example.com","click")',
+        'amount': '12.00',
+    }, follow_redirects=True)
+    assert response.status_code == 200
+
+    exported = client.get('/reports.csv')
+    assert exported.status_code == 200
+    assert b'\'=HYPERLINK' in exported.data
+    assert b'=HYPERLINK("https://example.com","click")' not in exported.data
