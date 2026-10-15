@@ -6,9 +6,21 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from .extensions import db
-from .models import PhoneScannerSession, utcnow
+from .models import utcnow
 
 bp = Blueprint("scanner", __name__, url_prefix="/scanner")
+
+
+class PhoneScannerSession(db.Model):
+    """Short-lived, business-scoped pairing for a phone barcode scanner."""
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey("business.id", ondelete="CASCADE"), nullable=False, index=True)
+    token = db.Column(db.String(96), nullable=False, unique=True, index=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+    last_code = db.Column(db.String(80))
+    code_sequence = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
 
 @bp.post("/pair")
