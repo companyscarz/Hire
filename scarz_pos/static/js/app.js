@@ -210,3 +210,56 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-scanner-help]').forEach(node=>node.textContent='Camera scanning uses a compatibility decoder when native browser support is missing. Allow camera access and keep the device online for the first decoder load. Manual entry and USB/Bluetooth scanners also work.');
   }
 });
+
+
+// Shared appearance preference and progressive-web-app installation.
+document.addEventListener('DOMContentLoaded',()=>{
+  const root=document.documentElement;
+  const toggle=document.getElementById('theme-toggle');
+  const meta=document.getElementById('theme-color-meta');
+  const applyTheme=theme=>{
+    const value=theme==='dark'?'dark':'light';
+    root.dataset.theme=value;
+    if(meta)meta.setAttribute('content',value==='dark'?'#070e19':'#0a1628');
+    if(toggle){
+      const next=value==='dark'?'light':'dark';
+      toggle.setAttribute('aria-pressed',String(value==='dark'));
+      toggle.setAttribute('aria-label','Switch to '+next+' theme');
+      const label=toggle.querySelector('.theme-toggle-label');
+      const icon=toggle.querySelector('.theme-toggle-icon');
+      if(label)label.textContent=value==='dark'?'Light mode':'Dark mode';
+      if(icon)icon.textContent=value==='dark'?'☀':'◐';
+    }
+  };
+  applyTheme(root.dataset.theme||'light');
+  toggle?.addEventListener('click',()=>{
+    const next=root.dataset.theme==='dark'?'light':'dark';
+    applyTheme(next);
+    try{localStorage.setItem('hire-pos-theme',next);}catch(_error){}
+  });
+  const installButton=document.getElementById('install-app');
+  let installPrompt=null;
+  const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+  if(installButton){
+    if(standalone())installButton.hidden=true;
+    window.addEventListener('beforeinstallprompt',event=>{
+      event.preventDefault();
+      installPrompt=event;
+      installButton.hidden=false;
+    });
+    window.addEventListener('appinstalled',()=>{
+      installPrompt=null;
+      installButton.hidden=true;
+    });
+    installButton.addEventListener('click',async()=>{
+      if(!installPrompt){
+        installButton.hidden=true;
+        return;
+      }
+      installPrompt.prompt();
+      try{await installPrompt.userChoice;}catch(_error){}
+      installPrompt=null;
+      installButton.hidden=true;
+    });
+  }
+});
