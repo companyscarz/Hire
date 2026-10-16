@@ -168,3 +168,38 @@
     z-index: 1102;
   }
 }
+
+
+/* Products-only safeguard: keep the mobile drawer at a predictable full width.
+   Inventory page viewport rules can otherwise leave the drawer looking clipped. */
+@media (max-width: 720px) {
+  body.inventory-page .topbar > nav#app-navigation {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: auto !important;
+    width: min(84vw, 340px) !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    overflow-x: hidden !important;
+    right: calc(-1 * min(84vw, 340px)) !important;
+    transform: none !important;
+  }
+  body.inventory-page .topbar > nav#app-navigation.is-open {
+    right: 0 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  body.inventory-page .topbar > nav#app-navigation > a,
+  body.inventory-page .topbar > nav#app-navigation > form,
+  body.inventory-page .topbar > nav#app-navigation > .theme-toggle,
+  body.inventory-page .topbar > nav#app-navigation > .install-button {
+    flex: 0 0 auto;
+    width: 100% !important;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
