@@ -138,3 +138,10 @@ body.inventory-page .container {
   .scanner-dialog[open] .scanner-dialog-inner{width:100%;}
   .scanner-dialog[open] video{width:100%;max-width:100%;object-fit:contain;}
 }
+
+/* Checkout: remove a single selected item without cancelling the whole sale. */
+.remove-sale-item{white-space:nowrap;padding:7px 10px;font-size:12px}
+.remove-sale-item[hidden]{display:none!important}
+#checkout-products tr.sale-item-selected td{background:color-mix(in srgb,var(--amber) 7%,transparent)}
+#checkout-products .qty-input{min-width:64px;max-width:100px}
+@media(max-width:720px){.remove-sale-item{padding:8px 9px}#checkout-products th,#checkout-products td{white-space:normal}}
