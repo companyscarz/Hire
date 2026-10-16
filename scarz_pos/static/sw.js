@@ -1,5 +1,5 @@
 /* Hire POS service worker: cache only public shell assets, never private page responses. */
-const CACHE_NAME = 'hire-pos-shell-v3';
+const CACHE_NAME = 'hire-pos-shell-v4';
 const SHELL_ASSETS = [
   '/static/css/app.css',
   '/static/js/app.js',
