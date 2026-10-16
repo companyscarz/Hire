@@ -25,7 +25,7 @@ def register(client, email='demo@example.com', business='Demo Shop'):
 def test_home_loads(client):
     response = client.get('/')
     assert response.status_code == 200
-    assert b'ScarZ POS' in response.data
+    assert b'Hire POS' in response.data
 
 def test_register_and_dashboard(client):
     response = register(client)
@@ -487,10 +487,15 @@ def test_phone_scanner_pairing_is_scoped_to_business(client, app):
         db.session.commit()
         other_user_id = other_user.id
 
+    # Authenticate through the real login route so this verifies the
+    # application session and tenant authorization together.
     second_client = app.test_client()
-    with second_client.session_transaction() as session:
-        session['_user_id'] = str(other_user_id)
-        session['_fresh'] = True
+    login_response = second_client.post('/login', data={
+        'email': 'scanner-second@example.com',
+        'password': 'very-long-password',
+    }, follow_redirects=True)
+    assert login_response.status_code == 200
+    assert b'Second Shop' in login_response.data
 
     response = second_client.get('/scanner/pair/' + token + '/next')
     assert response.status_code == 404
