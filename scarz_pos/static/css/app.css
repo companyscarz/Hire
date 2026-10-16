@@ -160,3 +160,41 @@ body.inventory-page .container {
 @media(max-width:900px){.product-edit-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){.product-manage-actions{min-width:140px}.restock-inline-form{min-width:140px}.restock-inline-form input{width:75px}.product-edit-grid .panel{overflow:hidden}}
 :root[data-theme="dark"] .product-active-toggle{color:var(--ink)}
+
+
+/* Products page: contain horizontal overflow to the inventory table, never the whole screen. */
+html,body{max-width:100%;overflow-x:clip}
+body.inventory-page{width:100%;min-width:0;overflow-x:clip;overscroll-behavior-x:none}
+body.inventory-page .topbar{width:100%;min-width:0;max-width:100%}
+body.inventory-page .container{width:min(92%,1200px);min-width:0;max-width:100%;overflow-x:clip}
+body.inventory-page .page-heading,
+body.inventory-page .inventory-alert-stats,
+body.inventory-page .inventory-grid,
+body.inventory-page .inventory-grid>.panel{min-width:0;max-width:100%}
+body.inventory-page .inventory-grid{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr)}
+body.inventory-page .inventory-grid>.panel{overflow:hidden}
+body.inventory-page .inventory-grid .form-grid,
+body.inventory-page .inventory-grid .form-grid>*{min-width:0;max-width:100%}
+body.inventory-page .inventory-grid input,
+body.inventory-page .inventory-grid select{min-width:0;max-width:100%}
+body.inventory-page .table-wrap{display:block;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+body.inventory-page .table-wrap table{width:max-content;min-width:100%;max-width:none;white-space:nowrap}
+@media(max-width:900px){
+  body.inventory-page .inventory-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:720px){
+  body.inventory-page .topbar{position:relative;z-index:1001;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  body.inventory-page .brand{flex:1 1 auto;min-width:0}
+  body.inventory-page .mobile-nav-toggle{flex:0 0 auto;position:relative;z-index:1003}
+  body.inventory-page .container{width:92%;margin:20px auto 44px}
+  body.inventory-page .page-heading{align-items:flex-start;gap:12px}
+  body.inventory-page .page-heading>.button{max-width:100%;white-space:normal}
+  body.inventory-page .inventory-alert-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.inventory-page .inventory-grid>.panel{padding:16px}
+  body.inventory-page .inventory-grid .panel-heading{align-items:flex-start;flex-wrap:wrap}
+  body.inventory-page .inventory-grid .stock-limit-form{min-width:0}
+  body.inventory-page .inventory-grid .stock-limit-form input{width:72px}
+  body.inventory-page .product-manage-actions{min-width:130px}
+  body.inventory-page .restock-inline-form{min-width:0;flex-wrap:wrap}
+  body.inventory-page .restock-inline-form input{width:72px}
+}
