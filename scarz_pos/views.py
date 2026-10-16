@@ -62,6 +62,8 @@ def dashboard():
     ).count()
     products = Product.query.filter_by(business_id=bid, active=True).order_by(Product.name).all()
     low_stock = [p for p in products if p.quantity <= p.low_stock_at]
+    out_of_stock = [p for p in low_stock if p.quantity == 0]
+    low_stock_only = [p for p in low_stock if p.quantity > 0]
     expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
         Expense.business_id == bid, Expense.created_at >= today_at, Expense.created_at < end_at,
     ).scalar()
@@ -98,7 +100,8 @@ def dashboard():
     ]
     return render_template(
         'dashboard.html', sales=sales, sale_count=count, products=products,
-        low_stock=low_stock, expenses=expenses, recent=recent,
+        low_stock=low_stock, out_of_stock=out_of_stock,
+        low_stock_only=low_stock_only, expenses=expenses, recent=recent,
         dashboard_chart=dashboard_chart, top_products=top_products,
     )
 
@@ -139,6 +142,32 @@ def products():
             flash('Please check the product details. SKU and barcode must each be unique within your business.', 'error')
     items = Product.query.filter_by(business_id=current_user.business_id).order_by(Product.name).all()
     return render_template('products.html', products=items)
+
+
+@bp.post('/products/<int:product_id>/stock-alert')
+@login_required
+def update_stock_alert(product_id):
+    """Update a product's low-stock threshold without allowing cross-business edits."""
+    require_active_subscription()
+    try:
+        threshold = int(request.form.get('low_stock_at', ''))
+        if threshold < 0:
+            raise ValueError('The low-stock alert limit cannot be negative.')
+        product = Product.query.filter_by(
+            id=product_id, business_id=current_user.business_id
+        ).first_or_404()
+        product.low_stock_at = threshold
+        db.session.commit()
+        if product.quantity == 0:
+            flash(f'{product.name}: out of stock. Alert limit saved at {threshold}.', 'error')
+        elif product.quantity <= threshold:
+            flash(f'{product.name}: low-stock alert is active ({product.quantity} left; alert at {threshold}).', 'info')
+        else:
+            flash(f'Low-stock alert limit updated for {product.name}.', 'success')
+    except (ValueError, TypeError):
+        db.session.rollback()
+        flash('Enter a whole-number stock alert limit of zero or more.', 'error')
+    return redirect(url_for('views.products'))
 
 
 @bp.route('/checkout', methods=['GET', 'POST'])
