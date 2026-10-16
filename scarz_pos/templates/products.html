@@ -4,7 +4,7 @@
 {% block content %}
 <section class="page-heading">
   <div><div class="eyebrow">INVENTORY</div><h1>Products</h1><p class="muted">Manage products, stock quantities and alerts before items run out.</p></div>
-  <a class="button primary" href="{{ url_for('views.checkout') }}">Go to checkout →</a>
+  <div class="products-page-actions"><button class="button secondary" type="button" onclick="if (history.length > 1) { history.back(); } else { window.location.href = '{{ url_for('views.dashboard') }}'; }">← Back</button><a class="button primary" href="{{ url_for('views.checkout') }}">Go to checkout →</a></div>
 </section>
 
 {% if out_of_stock_count or low_stock_count %}
