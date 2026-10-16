@@ -9,7 +9,7 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
 <header class="topbar">
-<a class="brand" href="{{ url_for('views.home') }}"><span class="brand-mark" aria-hidden="true">H</span> Hire <b>POS</b></a>
+<a class="brand" href="{{ url_for('views.dashboard') if current_user.is_authenticated else url_for('views.home') }}"><span class="brand-mark" aria-hidden="true">H</span> Hire <b>POS</b></a>
 {% if current_user.is_authenticated or request.endpoint not in ('auth.login', 'auth.register') %}
 <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-controls="app-navigation" aria-expanded="false" aria-label="Open navigation menu"><span class="mobile-nav-icon" aria-hidden="true"><span></span><span></span><span></span></span><span>Menu</span></button>
 {% endif %}
