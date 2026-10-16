@@ -175,6 +175,88 @@ def update_stock_alert(product_id):
     return redirect(url_for('views.products'))
 
 
+@bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_product(product_id):
+    """Edit product details without changing stock or rewriting historical sale records."""
+    product = Product.query.filter_by(
+        id=product_id, business_id=current_user.business_id
+    ).first_or_404()
+    if request.method == 'POST':
+        require_active_subscription()
+        try:
+            name = request.form.get('name', '').strip()
+            sku = request.form.get('sku', '').strip() or None
+            barcode = request.form.get('barcode', '').strip() or None
+            category = request.form.get('category', '').strip() or 'General'
+            cost = money(request.form.get('cost_price', ''))
+            price = money(request.form.get('selling_price', ''))
+            low_stock = int(request.form.get('low_stock_at', '5'))
+            if not name or len(name) > 160:
+                raise ValueError('Enter a product name of 1–160 characters.')
+            if sku and len(sku) > 80:
+                raise ValueError('SKU must be 80 characters or fewer.')
+            if barcode and len(barcode) > 80:
+                raise ValueError('Barcode must be 80 characters or fewer.')
+            if len(category) > 80 or low_stock < 0:
+                raise ValueError('Check the category and stock alert limit.')
+            product.name = name
+            product.sku = sku
+            product.barcode = barcode
+            product.category = category
+            product.cost_price = cost
+            product.selling_price = price
+            product.low_stock_at = low_stock
+            product.active = request.form.get('active') == 'on'
+            db.session.commit()
+            flash(f'{product.name} updated. Existing sale records remain unchanged.', 'success')
+            return redirect(url_for('views.products'))
+        except (ValueError, InvalidOperation, IntegrityError):
+            db.session.rollback()
+            flash('Could not update product. Check the values and ensure its SKU and barcode are unique within your business.', 'error')
+            product = Product.query.filter_by(
+                id=product_id, business_id=current_user.business_id
+            ).first_or_404()
+    return render_template('edit_product.html', product=product)
+
+
+@bp.post('/products/<int:product_id>/restock')
+@login_required
+def restock_product(product_id):
+    """Add delivered units to current stock and record the movement in the inventory ledger."""
+    require_active_subscription()
+    try:
+        received = int(request.form.get('quantity_received', '0'))
+        reason = request.form.get('reason', '').strip() or 'New stock received'
+        if received <= 0:
+            raise ValueError('Enter the number of new units received (at least 1).')
+        if received > 100000000 or len(reason) > 200:
+            raise ValueError('Check the quantity and restock reason.')
+        product = Product.query.filter_by(
+            id=product_id, business_id=current_user.business_id
+        ).with_for_update().first_or_404()
+        before = product.quantity
+        after = before + received
+        if after > 2147483647:
+            raise ValueError('The resulting stock quantity is too large.')
+        product.quantity = after
+        db.session.add(StockMovement(
+            business_id=current_user.business_id,
+            product_id=product.id,
+            user_id=current_user.id,
+            quantity_change=received,
+            quantity_before=before,
+            quantity_after=after,
+            reason=reason[:200],
+        ))
+        db.session.commit()
+        flash(f'Restocked {product.name}: {before} + {received} = {after} units. Stock history recorded.', 'success')
+    except (ValueError, TypeError):
+        db.session.rollback()
+        flash('Enter a valid whole number of units received (at least 1) and a short reason.', 'error')
+    return redirect(url_for('views.products'))
+
+
 @bp.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
