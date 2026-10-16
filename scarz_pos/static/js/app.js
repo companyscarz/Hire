@@ -29,6 +29,36 @@ document.addEventListener('DOMContentLoaded',()=>{
   const status=document.getElementById('product-search-status');
   const dialog=document.getElementById('barcode-camera-dialog');
   const video=document.getElementById('barcode-camera-video');
+  // Freeze the page behind the camera dialog on mobile, preserving the exact scroll position.
+  let scannerPageScrollY=0;
+  let scannerPageLocked=false;
+  let scannerBodyStyles=null;
+  const lockPageForScanner=()=>{
+    if(scannerPageLocked)return;
+    scannerPageScrollY=window.scrollY||window.pageYOffset||0;
+    scannerBodyStyles={position:document.body.style.position,top:document.body.style.top,left:document.body.style.left,right:document.body.style.right,width:document.body.style.width,overflow:document.body.style.overflow};
+    document.body.style.position='fixed';
+    document.body.style.top=`-${scannerPageScrollY}px`;
+    document.body.style.left='0';
+    document.body.style.right='0';
+    document.body.style.width='100%';
+    document.body.style.overflow='hidden';
+    scannerPageLocked=true;
+  };
+  const unlockPageForScanner=()=>{
+    if(!scannerPageLocked)return;
+    const old=scannerBodyStyles||{};
+    document.body.style.position=old.position||'';
+    document.body.style.top=old.top||'';
+    document.body.style.left=old.left||'';
+    document.body.style.right=old.right||'';
+    document.body.style.width=old.width||'';
+    document.body.style.overflow=old.overflow||'';
+    scannerPageLocked=false;
+    scannerBodyStyles=null;
+    window.scrollTo(0,scannerPageScrollY);
+  };
+  if(dialog)dialog.addEventListener('close',unlockPageForScanner);
   const cameraStatus=document.getElementById('barcode-camera-status');
   let stream=null, frame=0, scanning=false, zxingReader=null, nativeDetector=null, scanToken=0;
   const normalise=value=>String(value||'').trim().toLocaleLowerCase();
@@ -85,7 +115,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(video){video.pause();video.srcObject=null;}
   };
   const showDialog=()=>{
-    if(dialog&&!dialog.open)dialog.showModal();
+    if(dialog&&!dialog.open){
+      lockPageForScanner();
+      dialog.showModal();
+    }
   };
   const setCameraStatus=message=>{if(cameraStatus)cameraStatus.textContent=message;};
   const loadScript=src=>new Promise((resolve,reject)=>{
