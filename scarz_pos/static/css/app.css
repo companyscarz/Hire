@@ -81,3 +81,20 @@
 :root[data-theme="dark"] .inventory-stat-out strong{color:#ffb4b4}
 @media(max-width:720px){.stock-alert-banner{align-items:flex-start;flex-wrap:wrap;padding:14px}.stock-alert-copy{flex-basis:calc(100% - 58px)}.stock-alert-banner>.button{width:100%}.inventory-alert-stats{gap:8px}.inventory-alert-stats .stat{padding:13px 11px}.inventory-alert-stats .stat strong{font-size:20px}.stock-limit-form{min-width:0}.stock-limit-form input{width:58px}.stock-limit-form .button{padding:7px}.inventory-grid .panel{overflow:hidden}}
 @media(max-width:420px){.inventory-alert-stats .stat span{font-size:10px}.inventory-alert-stats .stat small{font-size:9px}}
+
+/* Keep the inventory screen from drifting sideways on touch devices.
+   The table remains independently horizontally scrollable when needed. */
+@supports (overflow-x: clip) {
+  body:has(.inventory-grid) { overflow-x: clip; }
+}
+.inventory-grid,
+.inventory-grid > .panel,
+.inventory-grid .table-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+.inventory-grid .table-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
