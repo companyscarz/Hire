@@ -487,10 +487,25 @@ def test_phone_scanner_pairing_is_scoped_to_business(client, app):
         db.session.commit()
         other_user_id = other_user.id
 
+        print("FIRST PAIRING BUSINESS:", pairing.business_id if 'pairing' in locals() else "not loaded yet")
+        print("SECOND USER ID:", other_user_id)
+        print("SECOND USER BUSINESS:", other_user.business_id)
+
+        from scarz_pos.scanner import PhoneScannerSession
+
+        pairing = PhoneScannerSession.query.filter_by(token=token).one()
+        assert other_user.business_id != pairing.business_id
+        print("DEBUG FIRST PAIRING BUSINESS:", pairing.business_id)
+        print("DEBUG SECOND USER ID:", other_user_id)
+        print("DEBUG SECOND USER BUSINESS:", other_user.business_id)
+
     second_client = app.test_client()
     with second_client.session_transaction() as session:
         session['_user_id'] = str(other_user_id)
         session['_fresh'] = True
+
+    with second_client.session_transaction() as session:
+        print("DEBUG SESSION USER ID:", session.get("_user_id"))
 
     response = second_client.get('/scanner/pair/' + token + '/next')
     assert response.status_code == 404

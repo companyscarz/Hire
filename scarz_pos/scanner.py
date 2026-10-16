@@ -88,4 +88,12 @@ def next_phone_code(token):
         pairing.last_code = queue[-1]["code"] if queue else None
         db.session.commit()
         return jsonify(event)
+    print(
+            "SCANNER DEBUG:",
+            "token =", token,
+            "authenticated =", current_user.is_authenticated,
+            "user_id =", current_user.get_id(),
+            "business_id =", getattr(current_user, "business_id", None),
+        )
     return jsonify({"code": None, "sequence": pairing.code_sequence})
+
