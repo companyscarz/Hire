@@ -82,19 +82,38 @@
 @media(max-width:720px){.stock-alert-banner{align-items:flex-start;flex-wrap:wrap;padding:14px}.stock-alert-copy{flex-basis:calc(100% - 58px)}.stock-alert-banner>.button{width:100%}.inventory-alert-stats{gap:8px}.inventory-alert-stats .stat{padding:13px 11px}.inventory-alert-stats .stat strong{font-size:20px}.stock-limit-form{min-width:0}.stock-limit-form input{width:58px}.stock-limit-form .button{padding:7px}.inventory-grid .panel{overflow:hidden}}
 @media(max-width:420px){.inventory-alert-stats .stat span{font-size:10px}.inventory-alert-stats .stat small{font-size:9px}}
 
-/* Keep the inventory screen from drifting sideways on touch devices.
-   The table remains independently horizontally scrollable when needed. */
-@supports (overflow-x: clip) {
-  body:has(.inventory-grid) { overflow-x: clip; }
+/* Lock the Products page to the viewport while preserving the inventory table's
+   own horizontal scrolling on narrow screens. */
+html { max-width: 100%; }
+body.inventory-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
-.inventory-grid,
-.inventory-grid > .panel,
-.inventory-grid .table-wrap {
+body.inventory-page .container {
+  min-width: 0;
+  max-width: 1200px;
+}
+.inventory-page .inventory-grid,
+.inventory-page .inventory-grid > .panel,
+.inventory-page .inventory-grid .panel-heading,
+.inventory-page .inventory-grid .table-wrap {
   min-width: 0;
   max-width: 100%;
 }
-.inventory-grid .table-wrap {
+.inventory-page .inventory-grid {
+  width: 100%;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr);
+}
+.inventory-page .inventory-grid .table-wrap {
+  width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+@media(max-width:900px) {
+  .inventory-page .inventory-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
