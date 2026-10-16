@@ -123,3 +123,17 @@
   .topbar nav#app-navigation .mobile-nav-close { flex: 0 0 auto; }
   body.mobile-nav-open { overflow: hidden; }
 }
+
+
+/* Clear active-page state in the shared navigation. */
+.topbar nav#app-navigation > a.active {
+  color: var(--amber);
+  text-decoration: none;
+  font-weight: 800;
+}
+@media (max-width: 720px) {
+  .topbar nav#app-navigation > a.active {
+    background: #ffffff14;
+    box-shadow: inset 3px 0 0 var(--amber);
+  }
+}
