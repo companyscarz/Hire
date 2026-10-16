@@ -45,7 +45,7 @@
     <div class="panel-heading"><div><h2>Your inventory</h2><p class="muted chart-subtitle">Stock status and alert limit for each product</p></div><span class="pill">{{ products|length }} items</span></div>
     {% if products %}
     <div class="table-wrap"><table>
-      <thead><tr><th>Product</th><th>SKU / barcode</th><th>Price</th><th>Stock status</th><th>Alert limit</th></tr></thead>
+      <thead><tr><th>Product</th><th>SKU / barcode</th><th>Price</th><th>Stock status</th><th>Alert limit</th><th>Manage</th></tr></thead>
       <tbody>{% for product in products %}
       <tr>
         <td><strong>{{ product.name }}</strong><small>{{ product.category }}</small></td>
@@ -64,6 +64,17 @@
             <input id="stock-limit-{{ product.id }}" name="low_stock_at" type="number" min="0" step="1" value="{{ product.low_stock_at }}" required>
             <button class="button secondary" type="submit">Save</button>
           </form>
+        </td>
+        <td>
+          <div class="product-manage-actions">
+            <a class="button secondary" href="{{ url_for('views.edit_product', product_id=product.id) }}">Edit</a>
+            <form method="post" action="{{ url_for('views.restock_product', product_id=product.id) }}" class="restock-inline-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="sr-only" for="restock-{{ product.id }}">New units received for {{ product.name }}</label>
+              <input id="restock-{{ product.id }}" name="quantity_received" type="number" min="1" step="1" inputmode="numeric" placeholder="Units +" required>
+              <button class="button primary" type="submit">Restock</button>
+            </form>
+          </div>
         </td>
       </tr>
       {% endfor %}</tbody>
