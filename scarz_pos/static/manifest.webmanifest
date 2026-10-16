@@ -6,35 +6,18 @@
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#f5f7fb",
+  "background_color": "#020713",
   "theme_color": "#0a1628",
-  "categories": [
-    "business",
-    "finance",
-    "productivity"
-  ],
+  "categories": ["business", "finance", "productivity"],
   "prefer_related_applications": false,
   "shortcuts": [
-    {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "url": "/dashboard"
-    },
-    {
-      "name": "Checkout",
-      "short_name": "Checkout",
-      "url": "/checkout"
-    },
-    {
-      "name": "Inventory",
-      "short_name": "Inventory",
-      "url": "/products"
-    }
+    {"name": "Dashboard", "short_name": "Dashboard", "url": "/dashboard"},
+    {"name": "Checkout", "short_name": "Checkout", "url": "/checkout"},
+    {"name": "Inventory", "short_name": "Inventory", "url": "/products"}
   ],
-  "icons": []
+  "icons": [
+    {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
 }
