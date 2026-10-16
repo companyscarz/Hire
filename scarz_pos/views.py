@@ -141,7 +141,12 @@ def products():
             db.session.rollback()
             flash('Please check the product details. SKU and barcode must each be unique within your business.', 'error')
     items = Product.query.filter_by(business_id=current_user.business_id).order_by(Product.name).all()
-    return render_template('products.html', products=items)
+    out_of_stock_count = sum(1 for item in items if item.active and item.quantity == 0)
+    low_stock_count = sum(1 for item in items if item.active and 0 < item.quantity <= item.low_stock_at)
+    return render_template(
+        'products.html', products=items,
+        out_of_stock_count=out_of_stock_count, low_stock_count=low_stock_count,
+    )
 
 
 @bp.post('/products/<int:product_id>/stock-alert')
