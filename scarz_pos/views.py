@@ -226,6 +226,19 @@ def checkout():
                 ))
             db.session.commit()
             flash(f'Sale #{sale.id} completed.', 'success')
+            low_after_sale = [
+                product for product, _qty in lines
+                if product.quantity <= product.low_stock_at
+            ]
+            for product in low_after_sale:
+                if product.quantity == 0:
+                    flash(f'OUT OF STOCK: {product.name}. Restock before the next sale.', 'error')
+                else:
+                    flash(
+                        f'LOW STOCK: {product.name} has {product.quantity} left '
+                        f'(alert limit: {product.low_stock_at}).',
+                        'info',
+                    )
             return redirect(url_for('views.receipt', sale_id=sale.id))
         except (ValueError, InvalidOperation) as exc:
             db.session.rollback()
@@ -267,6 +280,14 @@ def stock_history():
             ))
             db.session.commit()
             flash('Stock adjustment saved and recorded.', 'success')
+            if product.quantity == 0:
+                flash(f'OUT OF STOCK: {product.name}. Restock as soon as possible.', 'error')
+            elif product.quantity <= product.low_stock_at:
+                flash(
+                    f'LOW STOCK: {product.name} has {product.quantity} left '
+                    f'(alert limit: {product.low_stock_at}).',
+                    'info',
+                )
             return redirect(url_for('views.stock_history'))
         except (ValueError, InvalidOperation) as exc:
             db.session.rollback()
