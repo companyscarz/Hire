@@ -4,13 +4,15 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1628" id="theme-color-meta"><meta name="color-scheme" content="light dark">
 <script>(()=>{try{const saved=localStorage.getItem("hire-pos-theme");const theme=saved==="dark"||saved==="light"?saved:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=theme;}catch(_){document.documentElement.dataset.theme="light";}})();</script>
 <title>{% block title %}Hire POS{% endblock %}</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}"><link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.svg') }}"><link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='products-overflow-sidebar-20261016d') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-nav.css', v='products-overflow-sidebar-20261016d') }}">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}"><link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.svg') }}"><link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='shared-nav-viewport-20261016e') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-nav.css', v='products-overflow-sidebar-20261016d') }}">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body class="{% block body_class %}{% endblock %}">
 <header class="topbar">
 <a class="brand" href="{{ url_for('views.home') }}"><span class="brand-mark" aria-hidden="true">H</span> Hire <b>POS</b></a>
+{% if current_user.is_authenticated or request.endpoint not in ('auth.login', 'auth.register') %}
 <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-controls="app-navigation" aria-expanded="false" aria-label="Open navigation menu"><span class="mobile-nav-icon" aria-hidden="true"><span></span><span></span><span></span></span><span>Menu</span></button>
+{% endif %}
 {% if current_user.is_authenticated %}
 <nav id="app-navigation" aria-label="Main navigation">
 <button type="button" class="mobile-nav-close" aria-label="Close navigation menu"><span>Navigation</span><span aria-hidden="true">×</span></button>
@@ -18,7 +20,7 @@
 <form class="inline" method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-button">Sign out</button></form>
 <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false"><span aria-hidden="true" class="theme-toggle-icon">◐</span><span class="theme-toggle-label">Dark mode</span></button><button type="button" class="install-button" id="install-app" hidden>Install app</button>
 </nav>
-{% else %}
+{% elif request.endpoint not in ('auth.login', 'auth.register') %}
 <nav id="app-navigation" aria-label="Main navigation">
 <button type="button" class="mobile-nav-close" aria-label="Close navigation menu"><span>Navigation</span><span aria-hidden="true">×</span></button>
 <a href="{{ url_for('auth.login') }}">Sign in</a><a class="nav-cta" href="{{ url_for('auth.register') }}">Start free</a>
