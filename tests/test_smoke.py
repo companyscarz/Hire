@@ -487,17 +487,17 @@ def test_phone_scanner_pairing_is_scoped_to_business(client, app):
         db.session.commit()
         other_user_id = other_user.id
 
-    # Authenticate through the real login route so this verifies the
-    # application session and tenant authorization together.
-    second_client = app.test_client()
-    login_response = second_client.post('/login', data={
+    # Switch the existing client through the real logout/login routes.
+    # This avoids relying on hand-built Flask-Login session internals.
+    client.post('/logout', follow_redirects=True)
+    login_response = client.post('/login', data={
         'email': 'scanner-second@example.com',
         'password': 'very-long-password',
     }, follow_redirects=True)
     assert login_response.status_code == 200
     assert b'Second Shop' in login_response.data
 
-    response = second_client.get('/scanner/pair/' + token + '/next')
+    response = client.get('/scanner/pair/' + token + '/next')
     assert response.status_code == 404
 
 
