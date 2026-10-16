@@ -1,4 +1,36 @@
-document.addEventListener('DOMContentLoaded',()=>{const form=document.getElementById('checkout-form');if(!form)return;const inputs=[...form.querySelectorAll('.qty-input')];const output=document.getElementById('estimated-total');const currency=(document.querySelector('.total-box strong')?.textContent||'UGX').split(' ')[0];const update=()=>{let total=0;for(const input of inputs){const qty=Math.max(0,Math.min(Number.parseInt(input.value||'0',10)||0,Number.parseInt(input.max||'0',10)||0));input.value=String(qty);total+=qty*(Number.parseFloat(input.dataset.price)||0)}output.textContent=currency+' '+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})};inputs.forEach(input=>input.addEventListener('input',update));update()});
+document.addEventListener('DOMContentLoaded',()=>{
+  const form=document.getElementById('checkout-form');
+  if(!form)return;
+  const inputs=[...form.querySelectorAll('.qty-input')];
+  const output=document.getElementById('estimated-total');
+  const currency=(document.querySelector('.total-box strong')?.textContent||'UGX').split(' ')[0];
+  const update=()=>{
+    let total=0;
+    for(const input of inputs){
+      const qty=Math.max(0,Math.min(Number.parseInt(input.value||'0',10)||0,Number.parseInt(input.max||'0',10)||0));
+      input.value=String(qty);
+      total+=qty*(Number.parseFloat(input.dataset.price)||0);
+      const row=input.closest('tr');
+      const remove=row?.querySelector('[data-remove-sale-item]');
+      if(remove)remove.hidden=qty===0;
+      if(row)row.classList.toggle('sale-item-selected',qty>0);
+    }
+    if(output)output.textContent=currency+' '+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
+  inputs.forEach(input=>input.addEventListener('input',update));
+  form.querySelectorAll('[data-remove-sale-item]').forEach(button=>button.addEventListener('click',()=>{
+    const row=button.closest('tr');
+    const input=row?.querySelector('.qty-input');
+    if(!input)return;
+    input.value='0';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const productName=row.querySelector('td strong')?.textContent?.trim()||'Item';
+    const status=document.getElementById('product-search-status');
+    if(status)status.textContent=productName+' removed from this sale. Other selected items are unchanged.';
+    button.blur();
+  }));
+  update();
+});
 document.addEventListener('DOMContentLoaded',()=>{
   const money = value => new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value)||0);
   document.querySelectorAll('.chart[data-chart]').forEach(node=>{
