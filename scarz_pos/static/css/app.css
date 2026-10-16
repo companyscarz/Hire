@@ -268,3 +268,43 @@ body > footer {
     max-width: none;
   }
 }
+
+
+/* Final Products viewport guard: the document itself never pans horizontally.
+   Only .table-wrap may scroll sideways for wide inventory rows. */
+@media (max-width: 720px) {
+  html,
+  body,
+  body.inventory-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none;
+  }
+  body.inventory-page .container {
+    width: 92%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body.inventory-page .page-heading,
+  body.inventory-page .page-heading > div,
+  body.inventory-page .inventory-alert-stats,
+  body.inventory-page .inventory-grid,
+  body.inventory-page .inventory-grid > .panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+  body.inventory-page .inventory-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  body.inventory-page .inventory-grid .table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+}
