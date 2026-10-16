@@ -19,6 +19,12 @@ def create_app(test_config=None):
         SECRET_KEY=os.getenv('SECRET_KEY', 'dev-only-change-this-secret'),
         SQLALCHEMY_DATABASE_URI=database_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        # Check pooled connections before use and recycle long-lived connections.
+        # This helps recover from idle remote PostgreSQL connections being closed.
+        SQLALCHEMY_ENGINE_OPTIONS={
+            'pool_pre_ping': True,
+            'pool_recycle': 1800,
+        },
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
         SESSION_COOKIE_SECURE=os.getenv('APP_ENV') == 'production',
