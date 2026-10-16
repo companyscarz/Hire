@@ -308,3 +308,11 @@ body > footer {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+
+/* Products page uses its own safe back action instead of the shared sidebar. */
+.products-page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 720px) {
+  body.inventory-page .products-page-actions { width: 100%; }
+  body.inventory-page .products-page-actions > .button { flex: 1 1 auto; justify-content: center; }
+}
