@@ -198,3 +198,73 @@ body.inventory-page .table-wrap table{width:max-content;min-width:100%;max-width
   body.inventory-page .restock-inline-form{min-width:0;flex-wrap:wrap}
   body.inventory-page .restock-inline-form input{width:72px}
 }
+
+
+/* Final viewport containment: keep the document still on mobile while allowing
+   explicitly scrollable tables and navigation drawers to scroll independently. */
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+body > .topbar,
+body > .container,
+body > footer {
+  min-width: 0;
+  max-width: 100%;
+}
+.container,
+.page-heading,
+.content-grid,
+.content-grid > *,
+.panel,
+.panel-heading,
+.form-grid,
+.form-grid > * {
+  min-width: 0;
+}
+.table-wrap {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 720px) {
+  .topbar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .topbar nav#app-navigation {
+    max-width: 100vw;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+  .topbar nav#app-navigation.is-open {
+    visibility: visible;
+  }
+  .container {
+    width: 92%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .page-heading > *,
+  .actions > *,
+  .panel-heading > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .table-wrap table {
+    max-width: none;
+  }
+}
