@@ -39,9 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   closeButton?.addEventListener('click', () => closeMenu());
   backdrop.addEventListener('click', () => closeMenu());
-  nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-    if (mobileQuery.matches) closeMenu(false);
-  }));
+  // Let normal Flask links navigate before changing drawer state. Closing the
+  // drawer inside the click event can make mobile browser hit-testing unreliable
+  // when the backdrop and header have overlapping stacking contexts.
   nav.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => closeMenu(false)));
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && nav.classList.contains('is-open')) closeMenu();
