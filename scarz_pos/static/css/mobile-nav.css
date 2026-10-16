@@ -1,0 +1,115 @@
+/* Mobile navigation drawer: desktop navigation remains unchanged. */
+.mobile-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #ffffff35;
+  border-radius: 10px;
+  background: #ffffff12;
+  color: #fff;
+  font: 700 13px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+.mobile-nav-toggle:hover { background: #ffffff22; }
+.mobile-nav-toggle:focus-visible,
+.mobile-nav-close:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.mobile-nav-icon { display: grid; gap: 4px; width: 18px; }
+.mobile-nav-icon span { display: block; height: 2px; width: 18px; border-radius: 2px; background: currentColor; }
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border: 0;
+  padding: 0;
+  background: rgb(4 11 22 / 58%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.mobile-nav-backdrop.is-visible { opacity: 1; visibility: visible; }
+.mobile-nav-close { display: none; }
+@media (max-width: 720px) {
+  .topbar { position: relative; z-index: auto; align-items: center; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+  .brand { margin-right: auto; }
+  .mobile-nav-toggle { display: inline-flex; flex-shrink: 0; }
+  .topbar nav#app-navigation {
+    position: fixed;
+    z-index: 1002;
+    inset: 0 0 0 auto;
+    width: min(84vw, 340px);
+    height: 100dvh;
+    min-height: 100vh;
+    padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom));
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 7px;
+    background: var(--navy);
+    border-left: 1px solid #ffffff20;
+    box-shadow: -18px 0 50px #0003;
+    transform: translateX(105%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .22s ease, visibility .22s ease;
+  }
+  .topbar nav#app-navigation.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .mobile-nav-close {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 0 0 18px;
+    border: 0;
+    border-bottom: 1px solid #ffffff25;
+    background: transparent;
+    color: #fff;
+    font: 800 16px Manrope, sans-serif;
+    cursor: pointer;
+  }
+  .mobile-nav-close span:last-child { font: 400 26px sans-serif; line-height: 1; }
+  .topbar nav#app-navigation > a,
+  .topbar nav#app-navigation > .link-button,
+  .topbar nav#app-navigation > form,
+  .topbar nav#app-navigation > .theme-toggle,
+  .topbar nav#app-navigation > .install-button {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 13px;
+    margin: 0;
+    border-radius: 9px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .topbar nav#app-navigation > form { padding: 0; }
+  .topbar nav#app-navigation > form .link-button { padding: 12px 13px; }
+  .topbar nav#app-navigation > a:hover,
+  .topbar nav#app-navigation > .link-button:hover,
+  .topbar nav#app-navigation > form:hover,
+  .topbar nav#app-navigation > .theme-toggle:hover { background: #ffffff12; text-decoration: none; }
+  .topbar nav#app-navigation > .nav-cta { justify-content: center; color: var(--navy); }
+  .topbar nav#app-navigation > .theme-toggle,
+  .topbar nav#app-navigation > .install-button { border: 1px solid #ffffff35; }
+  .topbar nav#app-navigation > .install-button[hidden] { display: none; }
+  body.mobile-nav-open { overflow: hidden; touch-action: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-backdrop,
+  .topbar nav#app-navigation { transition: none; }
+}
