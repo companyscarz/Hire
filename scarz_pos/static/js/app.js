@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const dialog=document.getElementById('barcode-camera-dialog');
   const video=document.getElementById('barcode-camera-video');
   const cameraStatus=document.getElementById('barcode-camera-status');
-  let stream=null, frame=0, scanning=false, zxingReader=null, scanToken=0;
+  let stream=null, frame=0, scanning=false, zxingReader=null, nativeDetector=null, scanToken=0;
   const normalise=value=>String(value||'').trim().toLocaleLowerCase();
   const filterRows=()=>{
     if(!search)return;
@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(frame)cancelAnimationFrame(frame);
     frame=0;
     if(zxingReader){try{zxingReader.stopContinuousDecode();}catch(_error){} zxingReader=null;}
+    nativeDetector=null;
     if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
     if(video){video.pause();video.srcObject=null;}
   };
@@ -149,8 +150,36 @@ document.addEventListener('DOMContentLoaded',()=>{
           if(advanced.length)await track.applyConstraints({advanced});
         }catch(_error){}
       }
-      setCameraStatus('Camera is on. Preparing the compatibility decoder…');
-      await runZXingFallback(target,thisScan);
+      setCameraStatus('Camera is on. Preparing barcode detection…');
+      const startNativeScanner=async()=>{
+        if(!window.BarcodeDetector||typeof window.BarcodeDetector.getSupportedFormats!=='function')return false;
+        try{
+          const supported=await window.BarcodeDetector.getSupportedFormats();
+          const wanted=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar','qr_code'];
+          const formats=wanted.filter(format=>supported.includes(format));
+          if(!formats.length)return false;
+          nativeDetector=new window.BarcodeDetector({formats});
+          setCameraStatus('Camera is on. Hold the barcode inside the frame, keep it steady, and use good light…');
+          const detect=async()=>{
+            if(thisScan!==scanToken||!scanning||!nativeDetector)return;
+            try{
+              const results=await nativeDetector.detect(video);
+              const match=results.find(item=>item.rawValue);
+              if(match){deliverBarcode(target,match.rawValue);return;}
+            }catch(_error){
+              if(thisScan!==scanToken||!scanning)return;
+              nativeDetector=null;
+              setCameraStatus('Switching to compatibility barcode scanner…');
+              await runZXingFallback(target,thisScan);
+              return;
+            }
+            if(thisScan===scanToken&&scanning&&nativeDetector)window.setTimeout(detect,140);
+          };
+          detect();
+          return true;
+        }catch(_error){nativeDetector=null;return false;}
+      };
+      if(!(await startNativeScanner()))await runZXingFallback(target,thisScan);
     }catch(error){
       stopCamera();
       const name=error?.name||'';
