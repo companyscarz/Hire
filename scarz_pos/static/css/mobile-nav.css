@@ -137,3 +137,34 @@
     box-shadow: inset 3px 0 0 var(--amber);
   }
 }
+
+
+/* Final mobile drawer correction.
+   Keep the header's stacking context above the backdrop; otherwise the backdrop
+   covers the drawer and taps appear to do nothing. Avoid translating the closed
+   drawer beyond the viewport, which can create horizontal scroll on mobile PWAs. */
+@media (max-width: 720px) {
+  body.inventory-page .topbar,
+  .topbar {
+    position: relative;
+    z-index: 1101;
+  }
+  .mobile-nav-backdrop {
+    z-index: 1100;
+  }
+  .topbar nav#app-navigation {
+    z-index: 1103;
+    right: -min(84vw, 340px);
+    transform: none;
+    transition: right .22s ease, visibility .22s ease;
+    max-width: calc(100vw - env(safe-area-inset-left));
+    box-sizing: border-box;
+  }
+  .topbar nav#app-navigation.is-open {
+    right: 0;
+    transform: none;
+  }
+  .mobile-nav-toggle {
+    z-index: 1102;
+  }
+}
