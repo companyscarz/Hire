@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ product.name }} · Hire POS{% endblock %}
+{% block body_class %}inventory-page{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">INVENTORY</div>
+    <h1>Edit product</h1>
+    <p class="muted">Update details and prices without changing current stock or previous sales.</p>
+  </div>
+  <a class="button secondary" href="{{ url_for('views.products') }}">← Back to products</a>
+</section>
+
+<div class="content-grid inventory-grid product-edit-grid">
+  <section class="panel">
+    <div class="panel-heading">
+      <div><h2>{{ product.name }}</h2><p class="muted chart-subtitle">Current stock: <strong>{{ product.quantity }}</strong> units</p></div>
+    </div>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="span-2">Product name<input name="name" required maxlength="160" value="{{ product.name }}"></label>
+      <label>SKU (optional)<input name="sku" maxlength="80" autocomplete="off" value="{{ product.sku or '' }}"></label>
+      <label>Barcode (optional)<input name="barcode" maxlength="80" autocomplete="off" value="{{ product.barcode or '' }}"></label>
+      <label>Category<input name="category" maxlength="80" value="{{ product.category or 'General' }}"></label>
+      <label>Buying cost per unit<input name="cost_price" type="number" min="0" step="0.01" required value="{{ '%.2f'|format(product.cost_price|float) }}"></label>
+      <label>Selling price per unit<input name="selling_price" type="number" min="0" step="0.01" required value="{{ '%.2f'|format(product.selling_price|float) }}"></label>
+      <label>Warn me when stock reaches<input name="low_stock_at" type="number" min="0" step="1" required value="{{ product.low_stock_at }}"></label>
+      <label class="product-active-toggle"><input name="active" type="checkbox" {% if product.active %}checked{% endif %}> Product is active and available at checkout</label>
+      <p class="muted span-2 field-help">Changing prices affects future sales only. Completed sale receipts and their recorded buying costs stay unchanged.</p>
+      <button class="button primary span-2" type="submit">Save product changes</button>
+    </form>
+  </section>
+  <section class="panel product-edit-note">
+    <h2>Stock is managed separately</h2>
+    <p>Current quantity: <strong>{{ product.quantity }}</strong></p>
+    <p>Use <strong>Restock</strong> on the Products page when new units arrive. That records the received quantity in Stock history instead of accidentally replacing the existing stock.</p>
+    <a class="button secondary" href="{{ url_for('views.stock_history') }}">View stock history</a>
+  </section>
+</div>
+{% endblock %}
