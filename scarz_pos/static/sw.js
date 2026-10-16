@@ -5,6 +5,7 @@ const SHELL_ASSETS = [
   '/static/js/app.js',
   '/static/js/phone_scanner.js',
   '/static/css/mobile-nav.css',
+  '/static/js/mobile-nav.js',
   '/static/manifest.webmanifest',
   '/static/icon.svg',
   '/static/offline.html'
