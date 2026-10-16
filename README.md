@@ -1,54 +1,122 @@
-# ScarZ POS
+# Hire POS (ScarZ POS)
 
-ScarZ POS is a mobile-first, subscription-ready point-of-sale and inventory application for small businesses. This branch replaces the Hire application on `pre-main` only; `main` is untouched and Git history is preserved.
+Hire POS is a mobile-first point-of-sale and inventory application for small businesses. The active development and deployment branch for this project is `pre-main`; do not merge to `main` without explicit approval.
 
-## MVP foundation included
-- Business-owner registration, login/logout, password hashing, CSRF protection and secure cookie settings in production.
-- Tenant-scoped products, stock quantities, sales, sale items, expenses and dashboard totals.
-- Auditable stock ledger for opening stock, completed-sale deductions, manual adjustments, and sale-void inventory restoration with before/after quantities and reasons; manual adjustments cannot create negative stock or change another business's inventory.
-- Safe sale voiding: original transaction retained, mandatory reason and user/time audit record, one void per sale, stock restored transactionally once, and voided sales excluded from dashboard and date-filtered report/CSV totals. Voiding does not automatically refund money.
-- Checkout runs in a database transaction, locks selected product rows where supported, and rejects invalid quantities or insufficient stock.
-- PostgreSQL via `DATABASE_URL`, Flask application factory, SQLAlchemy, Flask-Migrate and Gunicorn/Nixpacks entrypoint.
-- Trial/subscription fields and server-side expiry checks as the foundation for paid plans.
+## Included features
+
+- Business-owner registration, login/logout, password hashing, CSRF protection and production cookie settings.
+- Business-scoped products, stock quantities, sales, sale items, expenses and dashboard totals.
+- Auditable stock ledger for opening stock, completed-sale deductions, manual adjustments, and sale-void inventory restoration with before/after quantities and reasons.
+- Sale voiding that retains the original transaction, requires a reason, records the user/time, permits one void per sale, restores stock transactionally once, and excludes voided sales from dashboard and filtered report/CSV totals. Voiding is not a refund.
+- Transactional checkout with stock validation and row locking where supported by the database.
+- PostgreSQL through `DATABASE_URL`, Flask application factory, SQLAlchemy, Flask-Migrate and Gunicorn.
+- Trial/subscription fields and server-side expiry checks.
 - Mobile-first PWA manifest and responsive interface.
-- Date-filtered reports for sales revenue, cost of goods sold, estimated gross profit, recorded expenses, estimated operating result, daily totals and payment-method breakdowns; filtered CSV export includes sale lines and expenses.
-- CSV sales export and printable receipt.
-- Automated CI workflow for Python compilation and pytest on `pre-main` pushes and pull requests.
+- Date-filtered reports for revenue, cost of goods sold, estimated gross profit, expenses, estimated operating result, daily totals and payment-method breakdowns; filtered CSV export and printable receipts.
+- CI workflow for Python compilation and pytest on `pre-main` pushes and pull requests.
 
-## Important MVP limitations
-- Subscription checkout uses the Nylon Pay SDK pattern already used in Digital Read/Qavzuno: pending payment record, Mobile Money collection, signed webhook verification, reference matching, amount/currency checks, and idempotent subscription activation. POS sales' local payment labels are not electronic payment processing.
-- The first database bootstrap uses `db.create_all()` for a fresh MVP database. It does not alter existing tables. Before a public production launch, check in an initial Flask-Migrate revision and use migrations for all schema changes.
-- Email verification, password recovery, staff roles, sale returns/refunds (voiding is not a refund), offline sale synchronization, rate limiting and a complete security audit remain to be done. Date-filtered business reporting is included, but it is not a replacement for audited accounting or tax reports.
-- Trial expiry is enforced for inventory creation, checkout and expense creation. Subscription payment initiation and webhook handling are implemented on this branch, but live provider verification and production tests are still pending. Configure plan prices before offering checkout. Configure Nylon Pay's webhook URL as `https://YOUR-DOMAIN/webhooks/nylonpay/subscriptions`.
+## Local development (Windows)
 
-## Local setup
-1. Install Python 3.12+.
-2. Copy `.env.example` to `.env` and set `DATABASE_URL` to the PostgreSQL database you intend to use. A remote hosted database is supported; remember that local actions will affect that database. SQLite can be used for isolated testing by removing `DATABASE_URL` from `.env`.
-3. In PowerShell, create and activate the virtual environment:
+1. Install Python 3.12 or newer.
+2. Copy `.env.example` to `.env`. Set `DATABASE_URL` to the database you intend to use. **If it points to your hosted/production database, local testing can change real business data. Prefer a separate test database.** For isolated local testing, omit `DATABASE_URL` to use the default SQLite database.
+3. In PowerShell, from the repository root:
+
    ```powershell
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
    ```
-4. Start the app:
+
+4. Run the development server:
+
    ```powershell
    python run.py
    ```
-5. Open `http://127.0.0.1:5000`. The local entry point runs the existing additive `init-db` bootstrap before starting the server.
-6. Stop the server with `Ctrl+C`.
 
-The local entry point uses the `DATABASE_URL` configured in `.env`, including a remote PostgreSQL database if that is your setup. **Use caution:** the app will read and write to that database, and the startup bootstrap may create missing tables and apply its additive barcode/scanner schema updates. Sales, inventory changes, and voids performed locally will affect that same database. Use a dedicated test database/business for testing whenever possible. Production deployments should continue to use the Gunicorn/Nixpacks command rather than Flask's development server.
+5. Open `http://127.0.0.1:5000`. Stop the server with `Ctrl+C`.
 
-## Environment
-- `SECRET_KEY`: required in production; long random secret.
-- `DATABASE_URL`: PostgreSQL URL, e.g. `postgresql+psycopg://user:password@host:5432/scarz_pos`. `postgres://` is normalized.
-- `APP_ENV`: set to `production` on hosting.
-- `PORT`: hosting-provided port or 8000.
-- `NYLONPAY_API_KEY`, `NYLONPAY_API_SECRET`, `NYLONPAY_WEBHOOK_SECRET`: Nylon Pay credentials. Never commit credentials.
-- `SCARZ_POS_PLAN_MONTHLY_UGX`, `SCARZ_POS_PLAN_QUARTERLY_UGX`, `SCARZ_POS_PLAN_ANNUAL_UGX`: server-side plan prices in UGX; keep unset until prices are decided.
+The local `run.py` entry point uses Flask's development server and runs the existing `init-db` bootstrap before starting. This is for local development only. It may create missing tables and apply the additive barcode/scanner schema updates. Do not use this entry point as the production web server.
 
-## Deployment
-Nixpacks builds from the repository root and starts Gunicorn on `0.0.0.0:$PORT`. Configure a persistent PostgreSQL database, set environment variables, and configure HTTPS/custom domain at the hosting provider. The startup command only creates missing tables; it is not a migration system and will not modify existing schema. The `subscription_payments` and `sale_void` tables are created on fresh databases by `init-db`. Existing deployments must run `init-db` against the intended database to create these missing tables; this command does not alter existing tables. Back up the database before making deployment changes. A checked-in migration workflow is still recommended before public production use.
+## Production deployment with Nixpacks and Gunicorn
 
-## Safety
-Do not store payment secrets in source control. Do not trust browser-submitted prices or totals. All money values are decimal and server-calculated. Do not merge `pre-main` to `main` without explicit approval.
+The repository's `nixpacks.toml` configures Python 3.12 and starts the application with Gunicorn. The production web process binds to **`0.0.0.0:$PORT`**, so the hosting platform can route traffic to it. The command is equivalent to:
+
+```bash
+gunicorn --bind 0.0.0.0:${PORT:-8000} \
+  --workers ${WEB_CONCURRENCY:-2} \
+  --timeout 60 \
+  --graceful-timeout 30 \
+  --access-logfile - \
+  --error-logfile - \
+  'scarz_pos:create_app()'
+```
+
+Nixpacks builds from the repository root and installs dependencies from `requirements.txt`. The production start command deliberately **does not run `init-db` on each restart**: startup should not silently mutate the database or make deployments depend on schema-changing bootstrap operations.
+
+### Required hosting configuration
+
+Set these in the hosting provider's environment settings; never commit production secrets:
+
+- `APP_ENV=production`
+- `SECRET_KEY`: a long, random secret unique to this deployment.
+- `DATABASE_URL`: connection URL for the intended PostgreSQL database, with SSL settings required by your provider.
+- `PORT`: normally injected by the platform. Nixpacks/Gunicorn defaults to port `8000` if it is not set.
+- `WEB_CONCURRENCY`: optional Gunicorn worker count; defaults to `2`. Adjust to the available memory and workload.
+- `NYLONPAY_API_KEY`, `NYLONPAY_API_SECRET`, `NYLONPAY_WEBHOOK_SECRET`: configure only when enabling subscription payments.
+- `SCARZ_POS_PLAN_MONTHLY_UGX`, `SCARZ_POS_PLAN_QUARTERLY_UGX`, `SCARZ_POS_PLAN_ANNUAL_UGX`: configure server-side plan prices before offering paid subscriptions.
+- `PUBLIC_BASE_URL`: set to the public HTTPS URL if required by payment callback configuration.
+
+Configure a persistent PostgreSQL service and HTTPS/custom domain with the host. The app exposes `/health/live` for process liveness and `/health/ready` for a basic database readiness check. Use the host's health-check configuration if supported.
+
+### Database setup and schema changes
+
+Before deploying, verify that the target database has the schema expected by the current code. The Flask CLI command `init-db` calls `db.create_all()` and performs additive barcode/scanner schema updates; it is **not** a full migration system and will not update every existing table to match future model changes. It can create missing tables such as `subscription_payments` and `sale_void`, but should not be run automatically at every production start.
+
+For a new database or a deliberate one-time schema setup, take a backup where applicable and confirm the target database URL before running:
+
+```bash
+flask --app 'scarz_pos:create_app()' init-db
+```
+
+Run that command from the project environment with the correct `DATABASE_URL` and required secrets configured. It changes the database schema by creating missing tables and applying the documented additive updates. Do not run it casually against production, and do not run it as a substitute for reviewed migrations. Before making schema changes to a live deployment, back up the database and verify a restore plan. A checked-in initial Flask-Migrate revision and reviewed migrations for subsequent schema changes are still needed before treating database deployment as fully production-hardened.
+
+## Application health endpoints
+
+- `GET /health/live`: confirms the Flask process is serving requests; it does not prove the database is available.
+- `GET /health/ready`: executes a read-only `SELECT 1` against the configured database and returns `503` if the check fails.
+
+## Environment reference
+
+| Variable | Purpose |
+| --- | --- |
+| `APP_ENV` | Use `production` on the production host. |
+| `SECRET_KEY` | Required strong secret; do not reuse the development placeholder. |
+| `DATABASE_URL` | PostgreSQL connection URL, for example `postgresql+psycopg://user:password@host:5432/scarz_pos`. Legacy `postgres://` is normalized by the app. |
+| `PORT` | Hosting-provided HTTP port; Gunicorn binds to `0.0.0.0`. |
+| `WEB_CONCURRENCY` | Optional Gunicorn worker count (default `2`). |
+| `NYLONPAY_API_KEY`, `NYLONPAY_API_SECRET`, `NYLONPAY_WEBHOOK_SECRET` | Payment provider credentials. |
+| `SCARZ_POS_PLAN_MONTHLY_UGX`, `SCARZ_POS_PLAN_QUARTERLY_UGX`, `SCARZ_POS_PLAN_ANNUAL_UGX` | Server-side subscription plan pricing. |
+| `PUBLIC_BASE_URL` | Public base URL used by integrations that need it. |
+
+## Production-readiness status and known limitations
+
+The Nixpacks/Gunicorn startup path and basic health endpoints are configured, but **a successful deployment command alone does not mean the whole product has passed a production security and operations audit**.
+
+Before opening the service broadly to the public:
+
+- Add and review an initial Flask-Migrate revision, then use reviewed migrations for schema changes.
+- Run automated tests against a disposable PostgreSQL database and perform a staging smoke test for registration, login, checkout, stock adjustments, sale voids, reports, and tenant isolation.
+- Verify database backups and a restore procedure.
+- Complete security review, including rate limiting, password recovery/email verification, session behavior, authorization and payment webhook verification.
+- Verify Nylon Pay in provider sandbox and then production before enabling paid subscriptions. POS payment-method labels alone do not process electronic payments.
+- Test hosting health checks, logs, restart behavior, resource limits and the configured Gunicorn worker count.
+
+Current MVP limitations include missing email verification/password recovery and staff roles, no offline sale synchronization, and no full returns/refunds workflow. Sale voiding does not automatically refund money. Reports are operational estimates, not audited accounting or tax reports. Trial expiry and subscription payment flows require additional end-to-end production verification. Configure the Nylon Pay webhook URL as `https://YOUR-DOMAIN/webhooks/nylonpay/subscriptions` when the integration is ready.
+
+## Safety rules
+
+- Never commit `.env`, database URLs with passwords, or payment secrets.
+- Never trust browser-submitted prices or totals; server-side logic must calculate them.
+- Use a separate test database for local testing and staging.
+- Back up production data before schema changes.
+- Do not force-push or merge `pre-main` to `main` without explicit approval.
