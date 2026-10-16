@@ -22,7 +22,7 @@
   const stop = document.getElementById('phone-scan-stop');
   const manual = document.getElementById('phone-manual-form');
   const manualInput = document.getElementById('phone-manual-code');
-  let stream = null, reader = null, active = false, lastValue = '', lastAt = 0, scriptPromise = null;
+  let stream = null, reader = null, nativeDetector = null, active = false, lastValue = '', lastAt = 0, scriptPromise = null;
   const say = value => { status.textContent = value; };
   const loadDecoder = () => {
     if (window.ZXing?.BrowserMultiFormatReader) return Promise.resolve();
@@ -57,6 +57,7 @@
   const stopCamera = () => {
     active = false;
     if (reader) { try { reader.reset(); } catch (_) {} reader = null; }
+    nativeDetector = null;
     if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
     video.pause(); video.srcObject = null;
   };
@@ -90,24 +91,61 @@
           if (caps.focusMode?.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
         } catch (_) {}
       }
-      await loadDecoder();
-      const z = window.ZXing;
-      const hints = new Map();
-      const formats = [
-        z.BarcodeFormat.EAN_13, z.BarcodeFormat.EAN_8, z.BarcodeFormat.UPC_A,
-        z.BarcodeFormat.UPC_E, z.BarcodeFormat.CODE_128, z.BarcodeFormat.CODE_39,
-        z.BarcodeFormat.ITF, z.BarcodeFormat.CODABAR
-      ].filter(value => value !== undefined);
-      if (z.DecodeHintType?.POSSIBLE_FORMATS && formats.length) hints.set(z.DecodeHintType.POSSIBLE_FORMATS, formats);
-      if (z.DecodeHintType?.TRY_HARDER) hints.set(z.DecodeHintType.TRY_HARDER, true);
-      reader = new z.BrowserMultiFormatReader(hints, 250);
       active = true;
-      say('Camera active. Center the printed barcode, use good light, and hold it steady.');
-      reader.decodeFromVideoElementContinuously(video, result => {
-        if (active && result?.getText) send(result.getText());
-      }).catch(error => {
-        if (active) say('Scanner stopped: ' + (error?.message || 'video decoding failed') + '. Try better light or manual entry.');
-      });
+      const startZXing = async () => {
+        await loadDecoder();
+        if (!active) return;
+        const z = window.ZXing;
+        const hints = new Map();
+        const formats = [
+          z.BarcodeFormat.EAN_13, z.BarcodeFormat.EAN_8, z.BarcodeFormat.UPC_A,
+          z.BarcodeFormat.UPC_E, z.BarcodeFormat.CODE_128, z.BarcodeFormat.CODE_39,
+          z.BarcodeFormat.ITF, z.BarcodeFormat.CODABAR
+        ].filter(value => value !== undefined);
+        if (z.DecodeHintType?.POSSIBLE_FORMATS && formats.length) hints.set(z.DecodeHintType.POSSIBLE_FORMATS, formats);
+        if (z.DecodeHintType?.TRY_HARDER) hints.set(z.DecodeHintType.TRY_HARDER, true);
+        reader = new z.BrowserMultiFormatReader(hints, 250);
+        say('Camera active. Center the barcode in the frame, use good light, and hold it steady.');
+        reader.decodeFromVideoElementContinuously(video, result => {
+          if (active && result?.getText) send(result.getText());
+        }).catch(error => {
+          if (active) say('Scanner stopped: ' + (error?.message || 'video decoding failed') + '. Try better light or manual entry.');
+        });
+      };
+      let nativeStarted = false;
+      if (window.BarcodeDetector && typeof window.BarcodeDetector.getSupportedFormats === 'function') {
+        try {
+          const supported = await window.BarcodeDetector.getSupportedFormats();
+          const wanted = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar','qr_code'];
+          const formats = wanted.filter(format => supported.includes(format));
+          if (formats.length) {
+            nativeDetector = new window.BarcodeDetector({formats});
+            nativeStarted = true;
+            say('Camera active. Hold the barcode inside the frame and keep it steady.');
+            const detect = async () => {
+              if (!active || !nativeDetector) return;
+              try {
+                const results = await nativeDetector.detect(video);
+                const match = results.find(item => item.rawValue);
+                if (match) await send(match.rawValue);
+              } catch (_) {
+                if (!active) return;
+                nativeDetector = null;
+                say('Switching to compatibility scanner…');
+                try { await startZXing(); }
+                catch (error) { say(error.message || 'Barcode decoder could not start. Enter the barcode manually.'); }
+                return;
+              }
+              if (active && nativeDetector) window.setTimeout(detect, 140);
+            };
+            detect();
+          }
+        } catch (_) { nativeDetector = null; }
+      }
+      if (!nativeStarted) {
+        try { await startZXing(); }
+        catch (error) { say(error.message || 'Barcode decoder could not start. Check internet access or enter the barcode manually.'); }
+      }
     } catch (error) {
       stopCamera();
       const name = error?.name || '';
