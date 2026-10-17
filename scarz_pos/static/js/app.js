@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     target.dispatchEvent(new Event('input',{bubbles:true}));
     target.dispatchEvent(new CustomEvent('barcode:detected',{bubbles:true,detail:{value}}));
     if(dialog?.open)dialog.close();
-    if(target.id==='product-barcode')target.focus();
+    // Keep the scanned value in the field without forcing mobile focus/zoom.
   };
   document.querySelectorAll('[data-scanner-close]').forEach(button=>button.addEventListener('click',()=>{
     stopCamera();
