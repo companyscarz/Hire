@@ -72,7 +72,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.body.style.position='fixed';
     document.body.style.top=`-${scannerPageScrollY}px`;
     document.body.style.left='0';
-    document.body.style.right='0';
+    // Do not constrain both horizontal edges while also forcing 100% width;
+    // mobile browsers can over-constrain the fixed body and leave a blank strip.
+    document.body.style.right='auto';
     document.body.style.width='100%';
     document.body.style.overflow='hidden';
     scannerPageLocked=true;
