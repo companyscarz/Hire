@@ -82,11 +82,25 @@ def create_app(test_config=None):
 
     @app.cli.command('ensure-db')
     def ensure_db_command():
-        """Initialize a brand-new database once; leave an existing schema untouched."""
-        if inspect(db.engine).has_table('user'):
-            print('Existing Hire POS schema detected; skipping automatic database bootstrap.')
+        """Initialize only a truly empty database; never repair a partial schema automatically."""
+        inspector = inspect(db.engine)
+        table_names = set(inspector.get_table_names())
+
+        if 'user' in table_names:
+            print('Existing Hire POS user table detected; skipping automatic database bootstrap.')
             return
-        print('No user table found; initializing the new Hire POS database.')
+
+        if table_names:
+            names = ', '.join(sorted(table_names))
+            raise RuntimeError(
+                'Hire POS database is not empty, but the core user table is missing. '
+                'Automatic initialization was stopped to protect existing data. '
+                f'Existing tables in the current schema: {names}. '
+                'Verify DATABASE_URL/current_schema and inspect Flask-Migrate state; '
+                'back up the database before applying a reviewed repair or migration.'
+            )
+
+        print('Database schema is empty; initializing the new Hire POS database.')
         _initialize_schema()
 
     @app.get('/sw.js')
