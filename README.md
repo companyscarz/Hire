@@ -51,7 +51,7 @@ gunicorn --bind 0.0.0.0:${PORT:-8000} \
   'scarz_pos:create_app()'
 ```
 
-Nixpacks builds from the repository root and installs dependencies from `requirements.txt`. Before starting Gunicorn, the production command runs `flask --app 'scarz_pos:create_app()' ensure-db`. This checks for the core `user` table: if it exists, startup leaves the existing schema untouched; if it is absent, the command runs the current schema bootstrap once to initialize a new database. If the database is empty, this step creates the application's tables before the web server starts.
+Nixpacks builds from the repository root and installs dependencies from `requirements.txt`. Before starting Gunicorn, the production command runs `flask --app 'scarz_pos:create_app()' ensure-db`. If the `user` table exists, startup leaves the schema untouched. If the current schema is completely empty, the command bootstraps the application's tables. If other tables exist but `user` is missing, startup stops with an error rather than modifying a possibly partial or wrong database. Verify `DATABASE_URL` and the current schema, inspect Flask-Migrate state, and back up before any repair.
 
 ### Required hosting configuration
 
@@ -70,7 +70,7 @@ Configure a persistent PostgreSQL service and HTTPS/custom domain with the host.
 
 ### Database setup and schema changes
 
-The production startup command runs `ensure-db`. It checks whether the core `user` table exists and only runs the bootstrap if it does not, so a brand-new empty PostgreSQL database is initialized automatically while a database with an existing `user` table is not modified by this automatic check.
+The production startup command runs `ensure-db`. It bootstraps only when the current schema has no tables. A schema with an existing `user` table is left untouched; a non-empty schema missing `user` causes startup to stop safely for diagnosis instead of running `create_all()` over a potentially partial schema.
 
 The underlying `init-db` command calls `db.create_all()` and applies additive barcode/scanner schema updates. It is **not** a full migration system and will not update every existing table to match future model changes. If an existing database has a partial or outdated schema, inspect it and use a reviewed migration rather than relying on this bootstrap. Confirm `DATABASE_URL` points to the intended database before deployment, and keep a backup/restore plan for any database containing important data. A checked-in initial Flask-Migrate revision and reviewed migrations for subsequent schema changes are still needed before treating database deployment as fully production-hardened.
 
