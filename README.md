@@ -51,7 +51,7 @@ gunicorn --bind 0.0.0.0:${PORT:-8000} \
   'scarz_pos:create_app()'
 ```
 
-Nixpacks builds from the repository root and installs dependencies from `requirements.txt`. The production start command deliberately **does not run `init-db` on each restart**: startup should not silently mutate the database or make deployments depend on schema-changing bootstrap operations.
+Nixpacks builds from the repository root and installs dependencies from `requirements.txt`. Before starting Gunicorn, the production command runs `flask --app 'scarz_pos:create_app()' ensure-db`. This checks for the core `user` table: if it exists, startup leaves the existing schema untouched; if it is absent, the command runs the current schema bootstrap once to initialize a new database. If the database is empty, this step creates the application's tables before the web server starts.
 
 ### Required hosting configuration
 
@@ -70,15 +70,9 @@ Configure a persistent PostgreSQL service and HTTPS/custom domain with the host.
 
 ### Database setup and schema changes
 
-Before deploying, verify that the target database has the schema expected by the current code. The Flask CLI command `init-db` calls `db.create_all()` and performs additive barcode/scanner schema updates; it is **not** a full migration system and will not update every existing table to match future model changes. It can create missing tables such as `subscription_payments` and `sale_void`, but should not be run automatically at every production start.
+The production startup command runs `ensure-db`. It checks whether the core `user` table exists and only runs the bootstrap if it does not, so a brand-new empty PostgreSQL database is initialized automatically while a database with an existing `user` table is not modified by this automatic check.
 
-For a new database or a deliberate one-time schema setup, take a backup where applicable and confirm the target database URL before running:
-
-```bash
-flask --app 'scarz_pos:create_app()' init-db
-```
-
-Run that command from the project environment with the correct `DATABASE_URL` and required secrets configured. It changes the database schema by creating missing tables and applying the documented additive updates. Do not run it casually against production, and do not run it as a substitute for reviewed migrations. Before making schema changes to a live deployment, back up the database and verify a restore plan. A checked-in initial Flask-Migrate revision and reviewed migrations for subsequent schema changes are still needed before treating database deployment as fully production-hardened.
+The underlying `init-db` command calls `db.create_all()` and applies additive barcode/scanner schema updates. It is **not** a full migration system and will not update every existing table to match future model changes. If an existing database has a partial or outdated schema, inspect it and use a reviewed migration rather than relying on this bootstrap. Confirm `DATABASE_URL` points to the intended database before deployment, and keep a backup/restore plan for any database containing important data. A checked-in initial Flask-Migrate revision and reviewed migrations for subsequent schema changes are still needed before treating database deployment as fully production-hardened.
 
 ## Application health endpoints
 
