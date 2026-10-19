@@ -55,9 +55,8 @@ def create_app(test_config=None):
     app.register_blueprint(billing_bp)
     app.register_blueprint(scanner_bp)
 
-    @app.cli.command('init-db')
-    def init_db_command():
-        """Create missing tables and apply the additive barcode schema update."""
+    def _initialize_schema():
+        """Create missing tables and apply the additive barcode/scanner schema updates."""
         db.create_all()
         product_columns = {column['name'] for column in inspect(db.engine).get_columns('product')}
         if 'barcode' not in product_columns:
@@ -75,6 +74,20 @@ def create_app(test_config=None):
             db.session.commit()
         db.session.commit()
         print('ScarZ POS tables are present; barcode and wireless-scanner schemas are ready.')
+
+    @app.cli.command('init-db')
+    def init_db_command():
+        """Explicitly initialize the database schema."""
+        _initialize_schema()
+
+    @app.cli.command('ensure-db')
+    def ensure_db_command():
+        """Initialize a brand-new database once; leave an existing schema untouched."""
+        if inspect(db.engine).has_table('user'):
+            print('Existing Hire POS schema detected; skipping automatic database bootstrap.')
+            return
+        print('No user table found; initializing the new Hire POS database.')
+        _initialize_schema()
 
     @app.get('/sw.js')
     def service_worker():
