@@ -5,5 +5,5 @@ NIXPACKS_PYTHON_VERSION = "3.12"
 APP_ENV = "production"
 
 [start]
-# Serve the Flask application with Gunicorn; never mutate the database on every restart.
-cmd = "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout 60 --graceful-timeout 30 --access-logfile - --error-logfile - 'scarz_pos:create_app()'"
+# Bootstrap a brand-new database once; existing schemas are left untouched.
+cmd = "flask --app 'scarz_pos:create_app()' ensure-db && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout 60 --graceful-timeout 30 --access-logfile - --error-logfile - 'scarz_pos:create_app()'"
